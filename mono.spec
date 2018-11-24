@@ -1,5 +1,5 @@
 Name: mono
-Version: 5.21.0.513
+Version: 5.21.0.521
 Release: 0
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
@@ -1366,3 +1366,5 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+* Sat Nov 24 2018 Yvan Janssens <qsecofr@qseco.fr> - 5.21.0.521-0
+- Updated to the latest Mono nightly.
