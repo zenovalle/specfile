@@ -2,7 +2,7 @@ Summary: A library of functions for manipulating PNG image format files
 Name: libpng
 Epoch: 2
 Version: 1.6.35
-Release: 1
+Release: 2
 License: zlib
 Group: System Environment/Libraries
 URL: http://www.libpng.org/pub/png/
@@ -24,7 +24,8 @@ files.
 Summary: Development tools for programs to manipulate PNG image format files
 Group: Development/Libraries
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Requires: zlib-devel%{?_isa} pkgconfig%{?_isa}
+Requires: zlib-devel%{?_isa} pkg-config%{?_isa}
+
  
 %description devel
 The libpng-devel package contains header files and documentation necessary

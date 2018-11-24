@@ -1,7 +1,7 @@
 Summary: Library of functions for manipulating TIFF format image files
 Name: libtiff
 Version: 4.0.10
-Release: 0
+Release: 1
 
 License: libtiff
 Group: System Environment/Libraries
@@ -77,7 +77,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,0755)
 %doc COPYRIGHT 
 %{_libdir}/libtiff*
-%{_datadir}/*
+%{_datadir}/doc/tiff-4.0.10/*
 
 %files devel
 %defattr(-,root,root,0755)
