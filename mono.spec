@@ -1,15 +1,16 @@
 Name: mono
-Version: 5.21.0.521
+Version: 6.1.0.313
 Release: 0
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
 
-%define mono_corlib_version E3B08C49-2D68-4693-AF9C-639F3ED0395F
+%define mono_corlib_version D0E80A74-BC69-4440-B4A0-BA6B5A944F1A
 Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.bz2
+# XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
 
-
+# XXX: Yvan uncommented these out because i rpmbuild isn't seeing the deps?
 #BuildRequires: bison
 
 #BuildRequires: libtool
@@ -76,8 +77,10 @@ export PATH
 # --with-tls= pthread is set during configure.ac https://github.com/mono/mono/blob/master/configure.ac#L402
 # So removed -lpthread from LDFLAGS
 
-autogen.sh \
-  LDFLAGS=-Wl,-brtl,-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
+
+# No brtl for now. CONFIG_SHELL is to work around a libtool issue on AIX.
+CONFIG_SHELL=/QOpenSys/pkgs/bin/bash autogen.sh \
+  LDFLAGS=-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
   --prefix=/QOpenSys/pkgs \
   --enable-minimal=shared_perfcounters
 
@@ -86,7 +89,8 @@ autogen.sh \
 # PASE_SYSCALL_NOSIGILL=ALL make get-monolite-latest
 # PASE_SYSCALL_NOSIGILL=ALL make -j1
 
-PASE_SYSCALL_NOSIGILL=ALL %make_build -j8
+# XXX: don't hardcode this; yvan ran into issues with default number though
+%make_build -j8
 echo "Done With Make Build"
 
 %install
@@ -94,6 +98,7 @@ echo "Done With Make Build"
 %make_install
 
 # we dont ship .la files
+# XXX: Should we? it seems that that it helps dlopen for mono
 find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %package -n mono-core
@@ -147,14 +152,12 @@ I18N, Cairo and Mono.*).
 %{_bindir}/setreg
 %{_bindir}/sn
 
-# Linux Distros have .so instead is this ok?
+# XXX: Linux Distros have .so instead is this ok?
+# yes for now; I have a WIP patch to make .so names work so it matches roch's packages, so these can be changed to .so again
 %{_libdir}/libMonoPosixHelper.a
-# Linux Distros have .so instead is this ok?
 %{_libdir}/libikvm-native.a
-# Excluded by opensuse spec file, should we remove?
 %{_libdir}/libMonoSupportW.a
-# Not in opensuse spec
-#%{_libdir}/libmono-system-native.a
+%{_libdir}/libmono-native.a
 
 %{_mandir}/man1/cert-sync.1
 %{_mandir}/man1/certmgr.1
@@ -576,9 +579,10 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/VBCSCompiler.*
 
 
+# libmono is a symlink to libmonosgen provided for compat
 %package -n libmono-2_0-1
 Summary: A Library for embedding Mono in your Application
-License: LGPL-2.1
+License: MIT X11
 Requires: libmonosgen-2_0-1
 Requires: mono-core = %{version}
 
@@ -597,7 +601,7 @@ A Library for embedding Mono in your Application.
 
 %package -n libmono-2_0-devel
 Summary: Development files for libmono
-License: LGPL-2.1
+License: MIT X11
 Requires: libmono-2_0-1 = %{version}
 Requires: libmonosgen-2_0-devel
 Requires: mono-core = %{version}
@@ -615,12 +619,12 @@ Development files for libmono.
 %defattr(-, qsys, *none)
 %{_bindir}/mono-gdb.py
 %{_includedir}/mono-2.0/
-%{_libdir}/libmono-2.0.a
+#%{_libdir}/libmono-2.0.a
 %{_libdir}/pkgconfig/mono-2.pc
 
 %package -n libmonosgen-2_0-1
 Summary: A Library for embedding Mono in your Application (SGen GC)
-License: LGPL-2.1
+License: MIT X11
 
 %description -n libmonosgen-2_0-1
 The Mono Project is an open development initiative that is working to
@@ -638,7 +642,7 @@ garbage collector.
 
 %package -n libmonosgen-2_0-devel
 Summary: Development files for libmonosgen
-License: LGPL-2.1
+License: MIT X11
 Requires: libmono-2_0-devel
 Requires: libmonosgen-2_0-1 = %{version}
 Requires: mono-core = %{version}
@@ -655,12 +659,12 @@ Development files for libmonosgen.
 %files -n libmonosgen-2_0-devel
 %defattr(-, qsys, *none)
 %{_bindir}/mono-sgen-gdb.py
-%{_libdir}/libmonosgen-2.0.a
+#%{_libdir}/libmonosgen-2.0.a
 %{_libdir}/pkgconfig/monosgen-2.pc
 
 %package -n mono-data
 Summary: Database connectivity for Mono
-License: LGPL-2.1
+License: MIT X11
 
 %description -n mono-data
 The Mono Project is an open development initiative that is working to
@@ -705,7 +709,7 @@ Database connectivity for Mono.
 
 %package -n mono-data-db2
 Summary: Database connectivity for DB2
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 Requires: mono-data = %{version}
 
@@ -716,7 +720,7 @@ Its objective is to enable Unix developers to build and deploy
 cross-platform .NET applications. The project will implement various
 technologies that have been submitted to the ECMA for standardization.
 
-Database connectivity for DB2.
+Database connectivity for DB2 Linux/Unix/Windows.
 
 %files -n mono-data-db2
 %defattr(-, qsys, *none)
@@ -725,7 +729,7 @@ Database connectivity for DB2.
 
 %package -n mono-data-sqlite
 Summary: Database connectivity for Mono
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 Requires: mono-data = %{version}
 
@@ -768,7 +772,7 @@ Database connectivity for Oracle.
 
 %package -n mono-winforms
 Summary: Mono's Windows Forms implementation
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 
 %description -n mono-winforms
@@ -797,7 +801,7 @@ Mono's Windows Forms implementation.
 
 %package -n mono-extras
 Summary: Extra packages
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 
 %description -n mono-extras
@@ -1015,7 +1019,7 @@ Mono implementation of ASP.NET MVC.
 
 %package -n mono-nunit
 Summary: NUnit Testing Framework
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 
 %description -n mono-nunit
@@ -1054,7 +1058,7 @@ NUnit brings xUnit to all .NET languages.
 
 %package -n mono-devel
 Summary: Mono development tools
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 # Required because they are referenced by .pc files
 Requires: mono-data = %{version}
@@ -1291,7 +1295,7 @@ Microsoft's Reactive Extensions.
 
 %package -n monodoc-core
 Summary: Monodoc - Documentation tools for C# code
-License: LGPL-2.1
+License: MIT X11
 Requires: mono-core = %{version}
 
 %description -n monodoc-core
@@ -1331,7 +1335,7 @@ Monodoc-core contains documentation tools for C#.
 
 %package -n mono-complete
 Summary: Install everything built from the mono source tree
-License: LGPL-2.1
+License: MIT X11
 Requires: libmono-2_0-1 = %{version}
 Requires: libmono-2_0-devel = %{version}
 Requires: mono-core = %{version}
@@ -1366,5 +1370,13 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+
+* Sun Mar 3 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.313-0
+- Updated to the latest Mono nightly
+- Make notes of things to fix in the future
+- Include Mono.Native
+- Update license to MIT
+
 * Sat Nov 24 2018 Yvan Janssens <qsecofr@qseco.fr> - 5.21.0.521-0
 - Updated to the latest Mono nightly.
+
