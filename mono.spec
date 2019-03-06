@@ -1,6 +1,6 @@
 Name: mono
 Version: 6.1.0.313
-Release: 0
+Release: 4
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
@@ -9,39 +9,32 @@ Url: https://www.mono-project.com/
 Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.bz2
 # XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
+# XXX: If this is sane, file a PR for upstream
+Patch0: mono-svr4sonames.patch
 
-# XXX: Yvan uncommented these out because i rpmbuild isn't seeing the deps?
-#BuildRequires: bison
-
-#BuildRequires: libtool
-#BuildRequires: autoconf
-#BuildRequires: automake
-#BuildRequires: pkg-config
-
+# XXX: Incomplete list
+BuildRequires: libtool
+BuildRequires: grep-gnu
+BuildRequires: m4-gnu
+BuildRequires: patch-gnu
+BuildRequires: coreutils-gnu
+BuildRequires: diffutils
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: pkg-config
 # btls requires cmake
 # We should get OpenSSL working instead:
 # https://github.com/mono/mono/issues/8888
-#BuildRequires: cmake
-
-#BuildRequires: gettext-tools
-#BuildRequires: gettext-runtime
-
-#BuildRequires: curl-devel
-#BuildRequires: glib2-devel
-#BuildRequires: libffi-devel
-#BuildRequires: libgettextpo-devel
-#BuildRequires: libstdcplusplus-devel
-#BuildRequires: libutil-devel
-#BildRequires: libxslt-devel
-#uildRequires: libxml2-devel
-#uildRequires: libxml2-tools
-#uildRequires: openssl-devel < 1.1.0
-#uildRequires: pcre-devel
-#uildRequires: unixODBC-devel
-#uildRequires: zlib-devel
-#uildRequires: python2
-#uildRequires: curl
-#BuildRequires: /QOpenSys/pkgs/lib/libiconv.so
+BuildRequires: cmake
+BuildRequires: gettext-tools
+BuildRequires: gettext-runtime
+BuildRequires: libstdcplusplus-devel
+BuildRequires: zlib-devel
+BuildRequires: bzip2
+BuildRequires: python2
+BuildRequires: curl
+BuildRequires: wget
+BuildRequires: bash
 #Recommends:     libgdiplus0
 
 
@@ -55,6 +48,8 @@ development of cross platform applications.
 %prep
 
 %setup -q
+
+%patch0 -p1
 
 echo cleaning up monolite dirs
 rm -rf mcs/class/lib/monolite-unix/%{mono_corlib_version}/*
@@ -70,24 +65,17 @@ ln -s /QOpenSys/pkgs/bin/python2 ./tmp_python/python
 PATH=$PWD/tmp_python:$PATH
 export PATH
 
-# During make install 'python' command is not found, use this hack to fully qualify python.
-#perl -p -i -e 's|python|/QOpenSys/pkgs/bin/python2|g' scripts/submodules/versions.mk
-
-
-# --with-tls= pthread is set during configure.ac https://github.com/mono/mono/blob/master/configure.ac#L402
-# So removed -lpthread from LDFLAGS
-
-
-# No brtl for now. CONFIG_SHELL is to work around a libtool issue on AIX.
-CONFIG_SHELL=/QOpenSys/pkgs/bin/bash autogen.sh \
-  LDFLAGS=-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
+# CONFIG_SHELL is to work around a libtool performance issue on AIX.
+# Force OBJECT_MODE=64. It's set for i RPM builds anyways; but may be useful
+# for a possible AIX build from the same specfile.
+# XXX: static_mono=yes seems to build a dynamic Mono with aix sonames always,
+# but it's a bit sketchy if it does or not with svr4 sonames. Play it safe.
+OBJECT_MODE=64 CONFIG_SHELL=/QOpenSys/pkgs/bin/bash autogen.sh \
+  LDFLAGS=-Wl,-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
   --prefix=/QOpenSys/pkgs \
+  --with-aix-soname=svr4 --enable-shared \
+  --with-static_mono=no --enable-static \
   --enable-minimal=shared_perfcounters
-
-# No Longer use make get-monolite-latest to grab the version of monolite; Added as SOURCE1
-# echo "-k" >> $HOME/.curlrc
-# PASE_SYSCALL_NOSIGILL=ALL make get-monolite-latest
-# PASE_SYSCALL_NOSIGILL=ALL make -j1
 
 # XXX: don't hardcode this; yvan ran into issues with default number though
 %make_build -j8
@@ -97,12 +85,10 @@ echo "Done With Make Build"
 
 %make_install
 
-# we dont ship .la files
-# XXX: Should we? it seems that that it helps dlopen for mono
-find %{buildroot}/%{_libdir} -name \*.la | xargs rm
-
 %package -n mono-core
 Summary: The Mono CIL runtime, suitable for running .NET code
+# Use this if runtime is dynamically linked
+Requires: libmono-2_0-1
 
 %description -n mono-core
 This package contains the core of the Mono runtime including its
@@ -152,12 +138,15 @@ I18N, Cairo and Mono.*).
 %{_bindir}/setreg
 %{_bindir}/sn
 
-# XXX: Linux Distros have .so instead is this ok?
-# yes for now; I have a WIP patch to make .so names work so it matches roch's packages, so these can be changed to .so again
-%{_libdir}/libMonoPosixHelper.a
-%{_libdir}/libikvm-native.a
-%{_libdir}/libMonoSupportW.a
-%{_libdir}/libmono-native.a
+# These are .a libraries without svr4 sonames
+%{_libdir}/libMonoPosixHelper.so*
+#%{_libdir}/libMonoPosixHelper.la
+%{_libdir}/libikvm-native.so*
+#%{_libdir}/libikvm-native.la
+%{_libdir}/libMonoSupportW.so*
+#%{_libdir}/libMonoSupportW.la
+%{_libdir}/libmono-native.so*
+#%{_libdir}/libmono-native.la
 
 %{_mandir}/man1/cert-sync.1
 %{_mandir}/man1/certmgr.1
@@ -597,7 +586,8 @@ A Library for embedding Mono in your Application.
 
 %files -n libmono-2_0-1
 %defattr(-, qsys, *none)
-%{_libdir}/libmono-2.0.a
+%{_libdir}/libmono-2.0.so*
+#%{_libdir}/libmono-2.0.la
 
 %package -n libmono-2_0-devel
 Summary: Development files for libmono
@@ -619,7 +609,7 @@ Development files for libmono.
 %defattr(-, qsys, *none)
 %{_bindir}/mono-gdb.py
 %{_includedir}/mono-2.0/
-#%{_libdir}/libmono-2.0.a
+%{_libdir}/libmono-2.0.a
 %{_libdir}/pkgconfig/mono-2.pc
 
 %package -n libmonosgen-2_0-1
@@ -638,7 +628,8 @@ garbage collector.
 
 %files -n libmonosgen-2_0-1
 %defattr(-, qsys, *none)
-%{_libdir}/libmonosgen-2.0.a
+%{_libdir}/libmonosgen-2.0.so*
+#%{_libdir}/libmonosgen-2.0.la
 
 %package -n libmonosgen-2_0-devel
 Summary: Development files for libmonosgen
@@ -659,7 +650,7 @@ Development files for libmonosgen.
 %files -n libmonosgen-2_0-devel
 %defattr(-, qsys, *none)
 %{_bindir}/mono-sgen-gdb.py
-#%{_libdir}/libmonosgen-2.0.a
+%{_libdir}/libmonosgen-2.0.a
 %{_libdir}/pkgconfig/monosgen-2.pc
 
 %package -n mono-data
@@ -1370,6 +1361,10 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+
+* Wed Mar 6 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.313-3
+- Use SVR4 sonames to be more consistent with Rochester... and work.
+- Initial attempt at fixing dependencies
 
 * Sun Mar 3 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.313-0
 - Updated to the latest Mono nightly
