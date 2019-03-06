@@ -30,6 +30,9 @@ Url:            http://giflib.sf.net/
 #Freecode-URL:	http://freecode.com/projects/giflib
 Source:         http://downloads.sf.net/giflib/%name-%version.tar.bz2
 
+# libutil-devel is for getopt.h (even though it doesn't use any symbols...)
+BuildRequires: sed-gnu, automake, autoconf, libtool, libutil-devel
+
 %description
 This Library allows manipulating GIF Image files. Since the LZW patents
 have expired, giflib can again be used instead of libungif.
@@ -66,22 +69,26 @@ have expired, giflib can again be used instead of libungif.
 
 %build
 
-mkdir -p m4; autoreconf -fiv
-./configure --disable-static --with-pic --x-libraries=%{_libdir} --prefix=/QOpenSys/pkgs
-make %{?_smp_mflags} V=1
+mkdir -p m4
+autoreconf -fiv
+# xxx: incl static? x libs?
+%configure --disable-static --with-aix-soname=svr4 --with-pic --x-libraries=%{_libdir}
+%make_build
 
 %install
-make install DESTDIR=$RPM_BUILD_ROOT
+%make_install
+
+find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %files -n %lname
 %defattr(-,root,root)
 %doc COPYING
-%{_libdir}/lib*.a
+%{_libdir}/lib*.so*
 
 %files devel
 %defattr(-,root,root)
 %_includedir/gif_lib.h
-%{_libdir}/lib*
+#%{_libdir}/lib*
 
 %files progs
 %defattr(-,root,root)

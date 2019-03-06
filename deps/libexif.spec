@@ -10,6 +10,7 @@ License: LGPL
 # else. original spec file author is Mark Pulford <mark@kyne.com.au>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Prefix: %{_prefix}
+BuildRequires: sed-gnu, automake, autoconf, libtool
 
 %description
 libexif is a library for parsing, editing, and saving EXIF data. It is
