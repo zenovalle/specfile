@@ -1,7 +1,7 @@
 Name: libexif
 Summary: EXIF tag library
 Version: 0.6.21
-Release: 1
+Release: 2
 Source: https://prdownloads.sourceforge.net/libexif/%{name}-%{version}.tar.gz
 Url: https://libexif.github.io/
 Group: System Environment/Libraries
@@ -30,11 +30,17 @@ that you can use to develop libexif applications.
 
 %build
 autoreconf -fiv
-./configure --prefix=/QOpenSys/pkgs 
-make
+# XXX: rochester doesn't package static libs though they may be useful for devel?
+%configure \
+  LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}"
+#  --with-soname=svr4
+%make_build
 
 %install
+
 %make_install
+
+find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -42,7 +48,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc ChangeLog README NEWS AUTHORS COPYING
-%{_libdir}/libexif.*
+%{_libdir}/libexif.so*
 %{_datadir}/locale/*/LC_MESSAGES/*.mo
 %{_datadir}/doc/*
 
@@ -50,4 +56,4 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_libdir}/pkgconfig/libexif.pc
 %{_includedir}/libexif
-%{_libdir}/libexif*
+%{_libdir}/libexif.a
