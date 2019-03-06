@@ -5,7 +5,9 @@ Release: 1
 
 License: libtiff
 Group: System Environment/Libraries
-URL: http://www.remotesensing.org/libtiff/
+URL: http://simplesystems.org/libtiff/
+
+BuildRequires: sed-gnu, automake, autoconf, libtool
 
 Source: http://download.osgeo.org/libtiff/tiff-%{version}.tar.gz
 
@@ -48,6 +50,7 @@ image files using the libtiff library.
 %prep
 %setup -q -n tiff-%{version}
 
+# XXX: How much of this is necessary?
 # Use build system's libtool.m4, not the one in the package.
 rm -f libtool.m4
 
@@ -58,32 +61,37 @@ autoconf
 autoheader
 
 %build
+# XXX: Flags more consistent?
 export CFLAGS="%{optflags} -fno-strict-aliasing"
-%configure --prefix=/QOpenSys/pkgs
-make %{?_smp_mflags}
+%configure --with-aix-soname=svr4
+%make_build
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
+#rm -rf $RPM_BUILD_ROOT
 
-make DESTDIR=$RPM_BUILD_ROOT install
+%make_install
 
+find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+# XXX: should use i naming for perms
 
 %files
 %defattr(-,root,root,0755)
-%doc COPYRIGHT 
-%{_libdir}/libtiff*
+%doc COPYRIGHT
+%{_libdir}/libtiff.so*
+%{_libdir}/libtiffxx.so*
 %{_datadir}/doc/tiff-4.0.10/*
 
 %files devel
 %defattr(-,root,root,0755)
 %doc TODO ChangeLog html
 %{_includedir}/*
-%{_libdir}/libtiff*
+%{_libdir}/libtiff.a
+%{_libdir}/libtiffxx.a
 %{_mandir}/man3/*
 %{_libdir}/pkgconfig/libtiff-4.pc
 
