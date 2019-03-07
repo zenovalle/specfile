@@ -1,14 +1,16 @@
 Summary: A library of functions for manipulating PNG image format files
 Name: libpng
 Epoch: 2
-Version: 1.6.35
+Version: 1.6.36
 Release: 2
 License: zlib
 Group: System Environment/Libraries
 URL: http://www.libpng.org/pub/png/
- 
-Source0: ftp://ftp.simplesystems.org/pub/png/src/libpng-%{version}.tar.gz
- 
+
+Source0: https://download.sourceforge.net/libpng/libpng-%{version}.tar.gz
+
+BuildRequires: autoconf, automake, libtool
+Requires: zlib
  
 %description
 The libpng package contains a library of functions for creating and
@@ -41,12 +43,15 @@ the libpng package.
  
  
 %build
-%configure --prefix=/QOpenSys/pkgs
+# Regenerate the build system so it respects soname
+autoreconf -fiv
+# XXX: Flags?
+%configure --with-aix-soname=svr4
 
-make %{?_smp_mflags} 
+%make_build
  
 %install
-make DESTDIR=$RPM_BUILD_ROOT install
+%make_install
  
 # We don't ship .la files.
 rm -rf $RPM_BUILD_ROOT%{_libdir}/*.la
@@ -54,13 +59,15 @@ rm -rf $RPM_BUILD_ROOT%{_libdir}/*.la
  
 %files
 %doc libpng-manual.txt example.c README TODO CHANGES LICENSE
-%{_libdir}/libpng*
+%{_libdir}/libpng.so*
+%{_libdir}/libpng16.so*
 %{_mandir}/man5/*
  
 %files devel
 %{_bindir}/*
 %{_includedir}/*
-%{_libdir}/libpng*
+%{_libdir}/libpng.a
+%{_libdir}/libpng16.a
 %{_libdir}/pkgconfig/libpng*.pc
 %{_mandir}/man3/*
  
