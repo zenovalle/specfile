@@ -1,14 +1,14 @@
 Summary: Library of functions for manipulating TIFF format image files
 Name: libtiff
 Version: 4.0.10
-Release: 1
+Release: 2
 
 License: libtiff
 Group: System Environment/Libraries
 URL: http://simplesystems.org/libtiff/
 
-BuildRequires: sed-gnu, automake, autoconf, libtool
-
+BuildRequires: sed-gnu, automake, autoconf, libtool, libjpeg-turbo-devel, zlib-devel, libstdcplusplus-devel
+Requires: libjpeg8, libz1, libstdcplusplus6
 Source: http://download.osgeo.org/libtiff/tiff-%{version}.tar.gz
 
 
@@ -63,7 +63,7 @@ autoheader
 %build
 # XXX: Flags more consistent?
 export CFLAGS="%{optflags} -fno-strict-aliasing"
-%configure --with-aix-soname=svr4
+%configure LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" --with-aix-soname=svr4 --disable-static
 %make_build
 
 
@@ -80,23 +80,23 @@ rm -rf $RPM_BUILD_ROOT
 # XXX: should use i naming for perms
 
 %files
-%defattr(-,root,root,0755)
+%defattr(-, qsys, *none)
 %doc COPYRIGHT
-%{_libdir}/libtiff.so*
-%{_libdir}/libtiffxx.so*
+%{_libdir}/libtiff.so.5
+%{_libdir}/libtiffxx.so.5
 %{_datadir}/doc/tiff-4.0.10/*
 
 %files devel
-%defattr(-,root,root,0755)
+%defattr(-, qsys, *none)
 %doc TODO ChangeLog html
 %{_includedir}/*
-%{_libdir}/libtiff.a
-%{_libdir}/libtiffxx.a
+%{_libdir}/libtiff.so
+%{_libdir}/libtiffxx.so
 %{_mandir}/man3/*
 %{_libdir}/pkgconfig/libtiff-4.pc
 
 
 %files tools
-%defattr(-,root,root,0755)
+%defattr(-, qsys, *none)
 %{_bindir}/*
 %{_mandir}/man1/*

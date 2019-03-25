@@ -20,7 +20,7 @@
 Name:           giflib
 %define lname	libgif6
 Version:        5.1.4
-Release:        0
+Release:        1
 Summary:        A Library for Working with GIF Images
 License:        MIT
 Group:          Development/Libraries/C and C++
@@ -72,7 +72,7 @@ have expired, giflib can again be used instead of libungif.
 mkdir -p m4
 autoreconf -fiv
 # xxx: incl static? x libs?
-%configure --disable-static --with-aix-soname=svr4 --with-pic --x-libraries=%{_libdir}
+%configure LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" --disable-static --with-aix-soname=svr4 --with-pic --x-libraries=%{_libdir}
 %make_build
 
 %install
@@ -81,17 +81,17 @@ autoreconf -fiv
 find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %files -n %lname
-%defattr(-,root,root)
+%defattr(-, qsys, *none)
 %doc COPYING
-%{_libdir}/lib*.so*
+%{_libdir}/libgif.so.7
 
 %files devel
-%defattr(-,root,root)
+%defattr(-, qsys, *none)
 %_includedir/gif_lib.h
-#%{_libdir}/lib*
+%{_libdir}/libgif.so
 
 %files progs
-%defattr(-,root,root)
+%defattr(-, qsys, *none)
 %doc COPYING NEWS README doc
 %_bindir/*
 
