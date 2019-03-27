@@ -1,22 +1,15 @@
 Summary:	X Render Extension
 Name:		renderproto
 Version:	0.11.1
-Release:	3
+Release:	4
 License:	MIT
 Group:		X11/Development/Libraries
 Source0:	https://www.x.org/archive/individual/proto/%{name}-%{version}.tar.gz
-Patch0:		%{name}-%{version}-aix.patch
 URL:		http://fontconfig.org/
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 
-BuildRequires:	autoconf, automake
-BuildRequires:	pkg-config
-#%ifos aix6.1 || %ifos aix7.1 || %ifos aix7.2
-#Requires: AIX-rpm >= 6.1.0.0
-#%else
-#Requires: AIX-rpm < 5.4.0.0
-#%endif
-
+BuildRequires:	autoconf, automake, libtool, m4-gnu, grep-gnu, tar-gnu, gzip
+BuildRequires:	pkg-config, util-macros
 
 %description
 This package contains header files and documentation for the X render
@@ -25,7 +18,6 @@ extension.  Library and server implementations are separate.
 
 %prep
 %setup -q
-%patch0
 
 
 %build
@@ -52,6 +44,9 @@ autoreconf -fiv
 
 
 %changelog
+* Tue Mar 26 2019 Calvin Buckley <calvin@cmpct.info> - 0.11.1-4
+- Use xorg-macros package and fix up deps for implied
+
 * Tue Mar 26 2019 Calvin Buckley <calvin@cmpct.info> - 0.11.1-3
 - Convert for PASE
 

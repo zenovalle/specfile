@@ -1,15 +1,15 @@
 Summary: X.Org X11 libXrender runtime library
 Name: libXrender
 Version: 0.9.10
-Release: 2
+Release: 3
 License: MIT
 Group: System Environment/Libraries
 URL: http://www.x.org
 Source0: ftp://ftp.x.org/pub/individual/lib/%{name}-%{version}.tar.bz2
-Patch0: %{name}-omit-xorg-macros.diff
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
-BuildRequires: bash, pkg-config, patch-gnu, xorg-compat-aix >= 1.2
+BuildRequires: bash, pkg-config, tar-gnu, xorg-compat-aix >= 1.2, util-macros
+BuildRequires: tar-gnu, automake, autoconf, m4-gnu, gcc-aix
 BuildRequires: renderproto >= 0.11.1-2
 
 Provides: xrender
@@ -30,8 +30,6 @@ X.Org X11 libXrender development package
 %prep
 export PATH=/opt/freeware/bin:$PATH
 %setup -q
-%patch0
-
 
 %build
 export CONFIG_SHELL=/QOpenSys/pkgs/bin/bash
@@ -68,7 +66,10 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_datadir}/doc/libXrender/libXrender.txt
 
 %changelog
-* Fri Nov 18 2016 Michael Perzl <michael@perzl.org> - 0.9.10-2
+* Wed Mar 27 2019 Calvin Buckley <calvin@cmpct.info> - 0.9.10-3
+- Use xorg-macros instead of patching them out
+
+* Wed Mar 27 2019 Calvin Buckley <calvin@cmpct.info> - 0.9.10-2
 - De-AIX, Rochester conventions
 
 * Fri Nov 18 2016 Michael Perzl <michael@perzl.org> - 0.9.10-1
