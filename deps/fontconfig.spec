@@ -4,7 +4,7 @@
 Summary: Font configuration and customization library
 Name: fontconfig
 Version: 2.12.6
-Release: 3
+Release: 4
 License: MIT
 Group: System Environment/Libraries
 Source0: http://fontconfig.org/release/%{name}-%{version}.tar.bz2
@@ -61,6 +61,7 @@ autoreconf -fiv
     LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static \
+    --with-default-fonts=/QOpenSys/pkgs/share/fonts \
     --with-add-fonts=/QOpenSys/usr/lib/X11/fonts/TrueType,/QOpenSys/usr/lib/X11/fonts/Type1
 
 %make_build
@@ -124,6 +125,9 @@ fi
 %{_datadir}/doc/fontconfig/fontconfig-devel/*
 
 %changelog
+* Wed Mar 27 2019 Calvin Buckley <calvin@cmpct.info> - 2.12.6-4
+- Set default fonts directory to the i yum root
+
 * Tue Mar 26 2019 Calvin Buckley <calvin@cmpct.info> - 2.12.6-3
 - Conversion for PASE
 
