@@ -1,0 +1,9 @@
+prefix=/QOpenSys/usr
+exec_prefix=/QOpenSys/usr
+libdir=/QOpenSys/usr/lib
+includedir=/QOpenSys/usr/include
+ 
+Name: FixesProto
+Description: Fixes extension headers
+Version: 4.0
+Cflags: -I${includedir}

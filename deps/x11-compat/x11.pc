@@ -1,0 +1,11 @@
+prefix=/QOpenSys/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: X11
+Description: X Library
+Version: 5.1
+Requires: 
+Cflags: -I${includedir} -I/QOpenSys/pkgs.include
+Libs: -L${libdir} -lX11

@@ -1,0 +1,9 @@
+prefix=/QOpenSys/usr
+exec_prefix=/QOpenSys/usr
+libdir=/QOpenSys/usr/lib
+includedir=/QOpenSys/usr/include
+ 
+Name: XExtProto
+Description: XExt extension headers
+Version: 7.0.2
+Cflags: -I${includedir}
