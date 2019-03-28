@@ -5,7 +5,7 @@
 
 Name:           libgdiplus0
 Version:        5.6.1
-Release:        0
+Release:        1
 License:        LGPL v2.1 only ; MPL ; MIT License (or similar)
 Url:            http://go-mono.org/
 Source0:        http://download.mono-project.com/sources/libgdiplus/%{real_name}-%{version}.tar.gz
@@ -57,11 +57,11 @@ Windows.Forms.
 %build
 # export CFLAGS="$RPM_OPT_FLAGS"
 autoreconf -fiv
+# XXX: libdsiplus needs an -lm but this isn't specified by the makefile, will need patches
 %configure \
-    LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    LDFLAGS="-lm -maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
-    --enable-shared --disable-static \
-    --without-x11
+    --enable-shared --disable-static
 
 %make_build
 
