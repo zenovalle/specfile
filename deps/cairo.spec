@@ -10,7 +10,7 @@
 Summary:	A vector graphics library
 Name:		cairo
 Version:	1.16.0
-Release:	1
+Release:	2
 URL:		https://www.cairographics.org
 Source0:	https://www.cairographics.org/releases/%{name}-%{version}.tar.xz
 Source1:	https://www.cairographics.org/releases/%{name}-%{version}.tar.xz.sha1
@@ -21,16 +21,16 @@ Group:		System Environment/Libraries
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildRequires: bash, autoconf, automake, libtool, xz
-# Implied xcb dependency? 
+BuildRequires: libxcb-devel
 BuildRequires: expat-devel
 BuildRequires: fontconfig-devel >= %{fontconfig_version}
 BuildRequires: freetype-devel >= %{freetype_version}
-# BuildRequires: gcc >= 4.2.3-2
+BuildRequires: gcc-aix >= 4.2.3-2
 BuildRequires: glib2-devel >= %{glib2_version}
 BuildRequires: libpng-devel >= %{libpng_version}
 # BuildRequires: librsvg2-devel >= %{librsvg2_version}
 BuildRequires: libxml2-devel >= %{libxml2_version}
-# BuildRequires: libXrender-devel >= %{libXrender_version}
+BuildRequires: libXrender-devel >= %{libXrender_version}
 BuildRequires: pixman-devel >= %{pixman_version}
 BuildRequires: pkg-config
 BuildRequires: zlib-devel
@@ -44,7 +44,8 @@ Requires: libgobject-2_0-0 >= %{glib2_version}
 Requires: libpng >= %{libpng_version}
 # Requires: librsvg2 >= %{librsvg2_version}
 Requires: libxml2 >= %{libxml2_version}
-# Requires: libXrender >= %{libXrender_version}
+Requires: libXrender >= %{libXrender_version}
+Requires: libxcb
 Requires: pixman >= %{pixman_version}
 Requires: zlib
 Requires: lzo
@@ -96,19 +97,15 @@ autoreconf -fiv
 
 # Some dependencies are disabled due to hairy dependency chains.
 # * --enable-svg=yes \  # librsvg <= 2.40 dependency chain
-# * --enable-xlib=yes \ # Building without X11 due to limited use
-#                       # (but we can always reconsider it)
-# * --enable-xcb=no \
-# * --enable-xlib-xrender=yes \ # need fd.o/x.org Xrender in place of IBM's
 # ax_cv_c_float_words_bigendian=yes is because the test is busted in autotools
 %configure \
     LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static \
     --enable-svg=no \
-    --enable-xlib=no \
-    --enable-xlib-xrender=no \
-    --enable-xcb=no \
+    --enable-xlib=yes \
+    --enable-xlib-xrender=yes \
+    --enable-xcb=yes \
     --enable-png=yes \
     --enable-ps=yes \
     --enable-pdf=yes \
@@ -144,6 +141,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 
 %changelog
+* Thu Mar 28 2019 Calvin Buckley <calvin@cmpct.info> - 1.16.0-2
+- Re-enable X11
+
 * Tue Mar 26 2019 Calvin Buckley <calvin@cmpct.info> - 1.16.0-1
 - Upgrade to 1.16.0 (some tests failing)
 - De-AIX, Rochester conventions
