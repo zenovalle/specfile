@@ -1,11 +1,11 @@
 Name: mono
-Version: 6.1.0.313
-Release: 4
+Version: 6.1.0.713
+Release: 1
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
 
-%define mono_corlib_version D0E80A74-BC69-4440-B4A0-BA6B5A944F1A
+%define mono_corlib_version 92351299-EECB-4E61-A590-39382BA4F7A0
 Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.bz2
 # XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
@@ -30,6 +30,7 @@ BuildRequires: gettext-tools
 BuildRequires: gettext-runtime
 BuildRequires: libstdcplusplus-devel
 BuildRequires: zlib-devel
+BuildRequires: libiconv-devel
 BuildRequires: bzip2
 BuildRequires: python2
 BuildRequires: curl
@@ -74,21 +75,23 @@ OBJECT_MODE=64 CONFIG_SHELL=/QOpenSys/pkgs/bin/bash autogen.sh \
   LDFLAGS=-Wl,-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
   --prefix=/QOpenSys/pkgs \
   --with-aix-soname=svr4 --enable-shared \
-  --with-static_mono=no --enable-static \
+  --with-static_mono=no --disable-static \
   --enable-minimal=shared_perfcounters
 
-# XXX: don't hardcode this; yvan ran into issues with default number though
-%make_build -j8
-echo "Done With Make Build"
+%make_build
 
 %install
 
-%make_install
+%make_install V=1
+
+find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 %package -n mono-core
 Summary: The Mono CIL runtime, suitable for running .NET code
 # Use this if runtime is dynamically linked
 Requires: libmono-2_0-1
+# Dependencies of helper libs
+Requires: libz1, libiconv2, libstdcplusplus6, libintl9
 
 %description -n mono-core
 This package contains the core of the Mono runtime including its
@@ -139,14 +142,12 @@ I18N, Cairo and Mono.*).
 %{_bindir}/sn
 
 # These are .a libraries without svr4 sonames
-%{_libdir}/libMonoPosixHelper.so*
-#%{_libdir}/libMonoPosixHelper.la
-%{_libdir}/libikvm-native.so*
-#%{_libdir}/libikvm-native.la
-%{_libdir}/libMonoSupportW.so*
-#%{_libdir}/libMonoSupportW.la
+%{_libdir}/libMonoPosixHelper.so
+%{_libdir}/libikvm-native.so
+%{_libdir}/libMonoSupportW.so
+# Include both files even though this isn't a dev package.
+# Mono prefers loading `.so` by default.
 %{_libdir}/libmono-native.so*
-#%{_libdir}/libmono-native.la
 
 %{_mandir}/man1/cert-sync.1
 %{_mandir}/man1/certmgr.1
@@ -186,7 +187,6 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/I18N.West.dll
 %{_libdir}/mono/4.5/I18N.dll
 
-# Should we remove these
 %{_libdir}/mono/4.5/I18N.CJK.dll
 %{_libdir}/mono/4.5/I18N.MidEast.dll
 %{_libdir}/mono/4.5/I18N.Other.dll
@@ -204,7 +204,6 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/Mono.Profiler.Log.dll
 %{_libdir}/mono/4.5/Mono.Security.dll
 
-# Should we remove?
 %{_libdir}/mono/4.5/Mono.Security.Win32.dll
 
 %{_libdir}/mono/4.5/Mono.Simd.dll
@@ -550,10 +549,8 @@ I18N, Cairo and Mono.*).
 
 
 #if roslyn
-# Currenlty does not work, exclude for now
-%exclude %{_bindir}/csc
-%exclude %{_prefix}/lib/mono/4.5/csc.*
-
+%{_bindir}/csc
+%{_prefix}/lib/mono/4.5/csc.*
 %{_bindir}/csi
 %{_bindir}/vbc
 %{_prefix}/lib/mono/4.5/csi.*
@@ -586,8 +583,7 @@ A Library for embedding Mono in your Application.
 
 %files -n libmono-2_0-1
 %defattr(-, qsys, *none)
-%{_libdir}/libmono-2.0.so*
-#%{_libdir}/libmono-2.0.la
+%{_libdir}/libmono-2.0.so.1
 
 %package -n libmono-2_0-devel
 Summary: Development files for libmono
@@ -609,7 +605,7 @@ Development files for libmono.
 %defattr(-, qsys, *none)
 %{_bindir}/mono-gdb.py
 %{_includedir}/mono-2.0/
-%{_libdir}/libmono-2.0.a
+%{_libdir}/libmono-2.0.so
 %{_libdir}/pkgconfig/mono-2.pc
 
 %package -n libmonosgen-2_0-1
@@ -628,8 +624,7 @@ garbage collector.
 
 %files -n libmonosgen-2_0-1
 %defattr(-, qsys, *none)
-%{_libdir}/libmonosgen-2.0.so*
-#%{_libdir}/libmonosgen-2.0.la
+%{_libdir}/libmonosgen-2.0.so.1
 
 %package -n libmonosgen-2_0-devel
 Summary: Development files for libmonosgen
@@ -650,7 +645,7 @@ Development files for libmonosgen.
 %files -n libmonosgen-2_0-devel
 %defattr(-, qsys, *none)
 %{_bindir}/mono-sgen-gdb.py
-%{_libdir}/libmonosgen-2.0.a
+%{_libdir}/libmonosgen-2.0.so
 %{_libdir}/pkgconfig/monosgen-2.pc
 
 %package -n mono-data
@@ -723,7 +718,7 @@ Summary: Database connectivity for Mono
 License: MIT X11
 Requires: mono-core = %{version}
 Requires: mono-data = %{version}
-
+# XXX: libsqlite dependency here
 
 %description -n mono-data-sqlite
 The Mono Project is an open development initiative that is working to
@@ -1008,45 +1003,6 @@ Mono implementation of ASP.NET MVC.
 %{_libdir}/mono/gac/System.Web.Extensions.Design/
 %{_libdir}/mono/gac/System.Web.Mvc/
 
-%package -n mono-nunit
-Summary: NUnit Testing Framework
-License: MIT X11
-Requires: mono-core = %{version}
-
-%description -n mono-nunit
-NUnit is a unit-testing framework for all .Net languages.  Initially
-ported from JUnit, the current release, version 2.2,  is the fourth
-major release of this  Unit based unit testing tool for Microsoft .NET.
-It is written entirely in C# and has been completely redesigned to
-take advantage of many .NET language features, for example custom
-attributes and other reflection related capabilities.
-
-NUnit brings xUnit to all .NET languages.
-
-%files -n mono-nunit
-%defattr(-, qsys, *none)
-%{_libdir}/pkgconfig/mono-nunit.pc
-%{_bindir}/nunit-console
-%{_bindir}/nunit-console2
-%{_bindir}/nunit-console4
-%{_libdir}/mono/4.5/nunit-console-runner.dll
-%{_libdir}/mono/4.5/nunit-console.exe*
-%{_libdir}/mono/4.5/nunit.core.dll
-%{_libdir}/mono/4.5/nunit.core.extensions.dll
-%{_libdir}/mono/4.5/nunit.core.interfaces.dll
-%{_libdir}/mono/4.5/nunit.framework.dll
-%{_libdir}/mono/4.5/nunit.framework.extensions.dll
-%{_libdir}/mono/4.5/nunit.mocks.dll
-%{_libdir}/mono/4.5/nunit.util.dll
-%{_libdir}/mono/gac/nunit-console-runner
-%{_libdir}/mono/gac/nunit.core/
-%{_libdir}/mono/gac/nunit.core.extensions/
-%{_libdir}/mono/gac/nunit.core.interfaces/
-%{_libdir}/mono/gac/nunit.framework/
-%{_libdir}/mono/gac/nunit.framework.extensions/
-%{_libdir}/mono/gac/nunit.mocks/
-%{_libdir}/mono/gac/nunit.util/
-
 %package -n mono-devel
 Summary: Mono development tools
 License: MIT X11
@@ -1099,6 +1055,7 @@ Mono development tools.
 %{_bindir}/mono-xmltool
 %{_bindir}/monodis
 %{_bindir}/monolinker
+# XXX: monograph is marked for death next bump
 %{_bindir}/monograph
 %{_bindir}/monop
 %{_bindir}/monop2
@@ -1339,7 +1296,6 @@ Requires: mono-data-sqlite = %{version}
 Requires: mono-devel = %{version}
 Requires: mono-extras = %{version}
 Requires: mono-mvc = %{version}
-Requires: mono-nunit = %{version}
 Requires: mono-reactive = %{version}
 Requires: mono-wcf = %{version}
 Requires: mono-web = %{version}
@@ -1361,6 +1317,12 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+
+* Fri Mar 29 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.713-1
+- Update version
+- Disable static objects
+- Remove NUnit as shipped by Mono, which no longer installs it
+- Reinstate purging libtool files. Patch allows loading of .so archives.
 
 * Wed Mar 6 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.313-3
 - Use SVR4 sonames to be more consistent with Rochester... and work.
