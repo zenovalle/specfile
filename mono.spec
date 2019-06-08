@@ -1,16 +1,14 @@
 Name: mono
-Version: 6.1.0.713
+Version: 6.5.0.93
 Release: 1
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
 
-%define mono_corlib_version 92351299-EECB-4E61-A590-39382BA4F7A0
-Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.bz2
+%define mono_corlib_version 62731146-81CF-4D61-826D-9A8DDED14432
+Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.xz
 # XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
-# XXX: If this is sane, file a PR for upstream
-Patch0: mono-svr4sonames.patch
 
 # XXX: Incomplete list
 BuildRequires: libtool
@@ -31,7 +29,7 @@ BuildRequires: gettext-runtime
 BuildRequires: libstdcplusplus-devel
 BuildRequires: zlib-devel
 BuildRequires: libiconv-devel
-BuildRequires: bzip2
+BuildRequires: xz
 BuildRequires: python2
 BuildRequires: curl
 BuildRequires: wget
@@ -49,8 +47,6 @@ development of cross platform applications.
 %prep
 
 %setup -q
-
-%patch0 -p1
 
 echo cleaning up monolite dirs
 rm -rf mcs/class/lib/monolite-unix/%{mono_corlib_version}/*
@@ -114,7 +110,6 @@ I18N, Cairo and Mono.*).
 
 %dir %{_libdir}/mono
 %dir %{_libdir}/mono/4.5
-%dir %{_libdir}/mono/4.5/dim/
 %dir %{_libdir}/mono/4.5/Facades
 %dir %{_libdir}/mono/gac
 
@@ -126,7 +121,6 @@ I18N, Cairo and Mono.*).
 %{_bindir}/crlupdate
 %{_bindir}/csharp
 
-%{_bindir}/csc-dim
 %{_bindir}/dmcs
 %{_bindir}/gacutil
 %{_bindir}/gacutil2
@@ -215,6 +209,7 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/System.Dynamic.dll
 %{_libdir}/mono/4.5/System.Json.dll
 %{_libdir}/mono/4.5/System.Json.Microsoft.dll
+%{_libdir}/mono/4.5/System.Memory.dll
 %{_libdir}/mono/4.5/System.Net.dll
 %{_libdir}/mono/4.5/System.Net.Http.dll
 %{_libdir}/mono/4.5/System.Net.Http.Formatting.dll
@@ -222,8 +217,10 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/System.Numerics.dll
 %{_libdir}/mono/4.5/System.Numerics.Vectors.dll
 %{_libdir}/mono/4.5/System.Reflection.Context.dll
+%{_libdir}/mono/4.5/System.Runtime.CompilerServices.Unsafe.dll
 %{_libdir}/mono/4.5/System.Security.dll
 %{_libdir}/mono/4.5/System.Threading.Tasks.Dataflow.dll
+%{_libdir}/mono/4.5/System.Threading.Tasks.Extensions.dll
 %{_libdir}/mono/4.5/System.Web.Mobile.dll
 %{_libdir}/mono/4.5/System.Web.RegularExpressions.dll
 %{_libdir}/mono/4.5/System.Workflow.Activities.dll
@@ -239,7 +236,6 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/Facades/System*
 %{_libdir}/mono/4.5/Facades/Microsoft*
 %{_libdir}/mono/4.5/Facades/netstandard*
-%{_libdir}/mono/4.5/dim/*
 %{_libdir}/mono/gac/Commons.Xml.Relaxng/
 %{_libdir}/mono/gac/CustomMarshalers/
 
@@ -651,6 +647,9 @@ Development files for libmonosgen.
 %package -n mono-data
 Summary: Database connectivity for Mono
 License: MIT X11
+Requires: mono-core = %{version}
+Requires: libodbc2
+# XXX: also unixODBC?
 
 %description -n mono-data
 The Mono Project is an open development initiative that is working to
@@ -718,7 +717,7 @@ Summary: Database connectivity for Mono
 License: MIT X11
 Requires: mono-core = %{version}
 Requires: mono-data = %{version}
-# XXX: libsqlite dependency here
+Requires: libsqlite3-0
 
 %description -n mono-data-sqlite
 The Mono Project is an open development initiative that is working to
@@ -1055,8 +1054,6 @@ Mono development tools.
 %{_bindir}/mono-xmltool
 %{_bindir}/monodis
 %{_bindir}/monolinker
-# XXX: monograph is marked for death next bump
-%{_bindir}/monograph
 %{_bindir}/monop
 %{_bindir}/monop2
 %{_bindir}/mprof-report
