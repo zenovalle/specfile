@@ -28,15 +28,13 @@ Requires: renderproto >= 0.11.1-2
 X.Org X11 libXrender development package
 
 %prep
-export PATH=/opt/freeware/bin:$PATH
 %setup -q
 
 %build
 export CONFIG_SHELL=/QOpenSys/pkgs/bin/bash
 export CONFIG_ENV_ARGS=/QOpenSys/pkgs/bin/bash
 
-# Shared libraries don't like to work right in svr4 sonames without autoreconf,
-# but we also don't have xorg-macros - that's what we patched out.
+# Shared libraries don't like to work right in svr4 sonames without autoreconf.
 autoreconf -fiv
 %configure \
     LDFLAGS="-Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
