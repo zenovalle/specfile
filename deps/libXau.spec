@@ -12,7 +12,7 @@ Source:		https://www.x.org/archive/individual/lib/%{name}-%{version}.tar.gz
 License:	MIT
 BuildRoot:	/var/tmp/%{name}-%{version}-root
 
-BuildRequires: util-macros, xorg-compat-aix, autoconf, automake, libtool
+BuildRequires: util-macros, xorgproto, autoconf, automake, libtool
 # Obsoletes:     libXorg
 
 %description
