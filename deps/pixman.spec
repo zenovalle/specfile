@@ -1,13 +1,12 @@
 Name:           pixman
-Version:        0.38.0
+Version:        0.38.4
 Release:        1
 Summary:        Pixel manipulation library
 Group:          System Environment/Libraries
 License:        MIT
-URL:            http://xorg.freedesktop.org/archive/individual/lib/
-Source0:        %{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires:  pkg-config
+URL:            http://pixman.org/
+Source0:        https://www.x.org/archive/individual/lib/%{name}-%{version}.tar.gz
+BuildRequires:  pkg-config, gcc-aix, automake, autoconf, libpng-devel
 
 %description
 Pixman is a pixel manipulation library for X and cairo.
@@ -24,13 +23,14 @@ Development library for %{name}.
 
 
 %prep
-%setup
+%setup -q
 
 %build
 
 autoreconf -fiv
 %configure \
-    LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    CPPFLAGS="-pthread" \
+    LDFLAGS="-pthread -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static \
     --disable-gtk
@@ -38,6 +38,8 @@ autoreconf -fiv
 #    --disable-timers
 
 %make_build
+
+# (gmake check || true)
 
 %install
 
@@ -57,6 +59,11 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_libdir}/pkgconfig/pixman-1.pc
 
 %changelog
+* Tue Jul 30 2019 Calvin Buckley <calvin@cmpct.info> - 0.38.4-1
+- Bump version
+- Fix source path and website URL
+- Fix threads and dep chain
+
 * Mon Mar 25 2019 Calvin Buckley <calvin@cmpct.info> - 0.38.0-1
 - Update to latest pixman.
 - De-AIXify package for PASE. This uses Rochester conventions now.
