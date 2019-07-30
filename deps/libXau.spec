@@ -4,7 +4,7 @@
 
 Name:          libXau
 Version:       1.0.9
-Release:       1
+Release:       2
 Summary:       X.Org Xau library
 Group:		System/Libraries
 URL:		http://www.x.org
@@ -69,6 +69,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_mandir}/man3/*
 
 %changelog
+* Mon Jul 29 2019 Calvin Buckley <calvin@cmpct.info> - 1.0.9-2
+- Build with X.org protos
+
 * Wed Mar 27 2019 Calvin Buckley <calvin@cmpct.info> - 1.0.9-1
 - Update to version 1.0.9-1
 - Add the undeclared dependencies and de-AIX

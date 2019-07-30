@@ -1,6 +1,6 @@
 Name:           libxcb
 Version:        1.13.1
-Release:        1
+Release:        2
 Summary:        A C binding to the X11 protocol
 
 Group:          System Environment/Libraries
@@ -10,9 +10,8 @@ Source0:        http://xcb.freedesktop.org/dist/%{name}-%{version}.tar.bz2
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Requires:       libXau
-# Doesn't seem like it's needed anymore
-# BuildRequires:  libxslt
+BuildRequires:  libXdmcp-devel, xorgproto
+BuildRequires:  libxslt
 BuildRequires:  make-gnu, bzip2, tar-gnu, libXau-devel
 BuildRequires:  pkg-config, util-macros, libpthread-stubs
 BuildRequires:	python2-devel, gcc-aix
@@ -41,7 +40,7 @@ developing applications that use %{name}.
 
 autoreconf -fiv
 %configure \
-    LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    LDFLAGS="-Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static
 %make_build
@@ -67,6 +66,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_datadir}/doc/libxcb/tutorial/*
 
 %changelog
+* Mon Jul 29 2019 Calvin Buckley <calvin@cmpct.info> - 1.13.1-2
+- Switch to X.org, clean up deps
+
 * Thu Mar 28 2019 Calvin Buckley <calvin@cmpct.info> - 1.13.1-1
 - Update to version 1.13.1
 - Add dependencies undeclared by RPM

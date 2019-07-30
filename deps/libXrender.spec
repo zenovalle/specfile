@@ -1,16 +1,16 @@
 Summary: X.Org X11 libXrender runtime library
 Name: libXrender
 Version: 0.9.10
-Release: 3
+Release: 4
 License: MIT
 Group: System Environment/Libraries
 URL: http://www.x.org
 Source0: ftp://ftp.x.org/pub/individual/lib/%{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
-BuildRequires: bash, pkg-config, tar-gnu, xorg-compat-aix >= 1.2, util-macros
+BuildRequires: bash, pkg-config, tar-gnu, util-macros
 BuildRequires: tar-gnu, automake, autoconf, m4-gnu, gcc-aix
-BuildRequires: renderproto >= 0.11.1-2
+BuildRequires: xorgproto, libX11-devel
 
 Provides: xrender
 
@@ -39,7 +39,7 @@ export CONFIG_ENV_ARGS=/QOpenSys/pkgs/bin/bash
 # but we also don't have xorg-macros - that's what we patched out.
 autoreconf -fiv
 %configure \
-    LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    LDFLAGS="-Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static
 %make_build
@@ -66,6 +66,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_datadir}/doc/libXrender/libXrender.txt
 
 %changelog
+* Mon Jul 29 2019 Calvin Buckley <calvin@cmpct.info> - 0.9.10-4
+- use X.org libs
+
 * Wed Mar 27 2019 Calvin Buckley <calvin@cmpct.info> - 0.9.10-3
 - Use xorg-macros instead of patching them out
 
