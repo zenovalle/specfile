@@ -10,15 +10,13 @@
 Summary:	A vector graphics library
 Name:		cairo
 Version:	1.16.0
-Release:	2
+Release:	3
 URL:		https://www.cairographics.org
 Source0:	https://www.cairographics.org/releases/%{name}-%{version}.tar.xz
 Source1:	https://www.cairographics.org/releases/%{name}-%{version}.tar.xz.sha1
 Source2:	https://www.cairographics.org/releases/%{name}-%{version}.tar.xz.sha1.asc
-# Patch0:		%{name}-%{version}-aix.patch
 License:	LGPL/MPL
 Group:		System Environment/Libraries
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildRequires: bash, autoconf, automake, libtool, xz
 BuildRequires: libxcb-devel
@@ -31,25 +29,13 @@ BuildRequires: libpng-devel >= %{libpng_version}
 # BuildRequires: librsvg2-devel >= %{librsvg2_version}
 BuildRequires: libxml2-devel >= %{libxml2_version}
 BuildRequires: libXrender-devel >= %{libXrender_version}
+BuildRequires: libXext-devel
 BuildRequires: pixman-devel >= %{pixman_version}
 BuildRequires: pkg-config
 BuildRequires: zlib-devel
 BuildRequires: lzo-devel
 
-Requires: fontconfig >= %{fontconfig_version}
-Requires: libfreetype6 >= %{freetype_version}
-Requires: libglib-2_0-0 >= %{glib2_version}
-Requires: libgobject-2_0-0 >= %{glib2_version}
-# Requires: libgcc >= 4.2.3-2
-Requires: libpng >= %{libpng_version}
-# Requires: librsvg2 >= %{librsvg2_version}
-Requires: libxml2 >= %{libxml2_version}
-Requires: libXrender >= %{libXrender_version}
-Requires: libxcb
-Requires: pixman >= %{pixman_version}
-Requires: zlib
-Requires: lzo
-Requires: libexpat1
+# Let RPM automatically wire up the deps.
 
 %description 
 Cairo is a vector graphics library designed to provide high-quality
@@ -71,10 +57,12 @@ Requires: freetype-devel >= %{freetype_version}
 Requires: glib2-devel >= %{glib2_version}
 Requires: libpng-devel >= %{libpng_version}
 Requires: libxml2-devel >= %{libxml2_version}
-# Requires: libXrender-devel >= %{libXrender_version}
+Requires: libXrender-devel >= %{libXrender_version}
+Requires: libXext-devel
+Requires: libxcb-devel
 Requires: pixman-devel >= %{pixman_version}
 Requires: zlib-devel
-BuildRequires: lzo-devel
+Requires: lzo-devel
 
 %description devel
 Developmental libraries and header files required for developing or
@@ -83,7 +71,6 @@ an open source vector graphics library.
 
 %prep
 %setup -q
-#%patch0
 
 %build
 
@@ -99,7 +86,7 @@ autoreconf -fiv
 # * --enable-svg=yes \  # librsvg <= 2.40 dependency chain
 # ax_cv_c_float_words_bigendian=yes is because the test is busted in autotools
 %configure \
-    LDFLAGS="-maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    LDFLAGS="-pthread -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static \
     --enable-svg=no \
@@ -141,6 +128,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 
 %changelog
+* Tue Jul 30 2019 Calvin Buckley <calvin@cmpct.info> - 1.16.0-3
+- Switch to X.org
+
 * Thu Mar 28 2019 Calvin Buckley <calvin@cmpct.info> - 1.16.0-2
 - Re-enable X11
 
