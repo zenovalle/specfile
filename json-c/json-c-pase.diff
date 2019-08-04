@@ -1,0 +1,39 @@
+diff --git a/json_object.c b/json_object.c
+index 458163c..ef52850 100644
+--- a/json_object.c
++++ b/json_object.c
+@@ -34,6 +34,15 @@
+ #include "strdup_compat.h"
+ #include "snprintf_compat.h"
+ 
++/*
++ * Redefine HUGE_VAL because the default AIX/PASE definition isn't
++ * compatible with strict-aliasing errors.
++ */
++#if defined(_AIX) && defined(__GNUC__)
++#undef HUGE_VAL
++#define HUGE_VAL __builtin_huge_val()
++#endif
++
+ #if SIZEOF_LONG_LONG != SIZEOF_INT64_T
+ #error "The long long type isn't 64-bits"
+ #endif
+diff --git a/json_tokener.c b/json_tokener.c
+index 449a82d..5dacb23 100644
+--- a/json_tokener.c
++++ b/json_tokener.c
+@@ -55,6 +55,14 @@
+ #define NAN nan("")
+ #endif /* !NAN */
+ 
++/* More AIX dumb */
++#if defined(_AIX) && defined(__GNUC__)
++#undef INFINITY
++#define INFINITY __builtin_inff()
++#undef NAN
++#define NAN __builtin_nan("")
++#endif
++
+ static const char json_null_str[] = "null";
+ static const int json_null_str_len = sizeof(json_null_str) - 1;
+ static const char json_inf_str[] = "Infinity";
