@@ -5,7 +5,7 @@
 
 Name:           libgdiplus0
 Version:        5.6.1
-Release:        2
+Release:        3
 License:        LGPL v2.1 only ; MPL ; MIT License (or similar)
 Url:            http://go-mono.org/
 Source0:        http://download.mono-project.com/sources/libgdiplus/%{real_name}-%{version}.tar.gz
@@ -23,6 +23,7 @@ BuildRequires:  fontconfig-devel
 BuildRequires:  giflib-devel
 BuildRequires:  glib2-devel
 BuildRequires:  libexif-devel
+BuildRequires:  libX11-devel
 # XXX: Elsewhere, this is libjpeg-devel. That pkg should have a "provides"
 BuildRequires:  libjpeg-turbo-devel
 BuildRequires:  libpng-devel
@@ -57,9 +58,9 @@ Windows.Forms.
 %build
 # export CFLAGS="$RPM_OPT_FLAGS"
 autoreconf -fiv
-# XXX: libdsiplus needs -lX11/-lm but this isn't specified by the makefile, will need patches
+# XXX: libdsiplus needs -lm but this isn't specified by the makefile, will need patches
 %configure \
-    LDFLAGS="-lm -lX11 -maix${OBJECT_MODE} -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
+    LDFLAGS="-lm -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
     --with-aix-soname=svr4 \
     --enable-shared --disable-static
 
@@ -67,18 +68,9 @@ autoreconf -fiv
 
 %install
 %make_install
-# Unwanted files:
-rm -f %{buildroot}%{_libdir}/libgdiplus.a
 rm -f %{buildroot}%{_libdir}/libgdiplus.la
 # Remove generic non-usefull INSTALL file... (appeases
 #  suse rpmlint checks, saves 3kb)
 find . -name INSTALL | xargs rm -f
-
-#%clean
-#rm -rf "$RPM_BUILD_ROOT"
-
-# %post -p /sbin/ldconfig
-
-# %postun -p /sbin/ldconfig
 
 %changelog
