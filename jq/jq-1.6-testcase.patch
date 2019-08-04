@@ -1,0 +1,32 @@
+--- src/jv_alloc.c.orig	2019-05-28 02:09:39 +0000
++++ src/jv_alloc.c	2019-05-28 02:07:20 +0000
+@@ -119,6 +119,9 @@
+ 
+ 
+ void* jv_mem_alloc(size_t sz) {
++  if (sz==0) {
++    sz=sz+1;
++  }
+   void* p = malloc(sz);
+   if (!p) {
+     memory_exhausted();
+@@ -131,6 +134,9 @@
+ }
+ 
+ void* jv_mem_calloc(size_t nemb, size_t sz) {
++  if (sz==0) {
++    sz=sz+1;
++  }
+   void* p = calloc(nemb, sz);
+   if (!p) {
+     memory_exhausted();
+@@ -159,6 +165,9 @@
+ }
+ 
+ void* jv_mem_realloc(void* p, size_t sz) {
++  if (sz==0) {
++    sz=sz+1;
++  }
+   p = realloc(p, sz);
+   if (!p) {
+     memory_exhausted();

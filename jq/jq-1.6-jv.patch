@@ -1,0 +1,12 @@
+--- src/jv.h.orig	2018-09-18 01:16:54 +0000
++++ src/jv.h	2018-09-18 01:20:17 +0000
+@@ -99,6 +99,9 @@
+   __attribute__ ((__format__( __printf__, fmt_arg_num, args_num)))
+ #define JV_VPRINTF_LIKE(fmt_arg_num) \
+   __attribute__ ((__format__( __printf__, fmt_arg_num, 0)))
++#else
++#define JV_PRINTF_LIKE(fmt_arg_num, args_num)
++#define JV_VPRINTF_LIKE(fmt_arg_num)
+ #endif
+ 
+ 

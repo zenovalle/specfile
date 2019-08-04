@@ -1,0 +1,48 @@
+--- src/bytecode.c.orig	2019-05-21 05:31:32 +0000
++++ src/bytecode.c	2019-05-21 05:32:26 +0000
+@@ -56,7 +56,8 @@
+ }
+ 
+ static void symbol_table_free(struct symbol_table* syms) {
+-  jv_mem_free(syms->cfunctions);
++  if (syms->cfunctions)
++    jv_mem_free(syms->cfunctions);
+   jv_free(syms->cfunc_names);
+   jv_mem_free(syms);
+ }
+--- src/bytecode.h.orig	2019-05-21 05:32:37 +0000
++++ src/bytecode.h	2019-05-21 05:33:49 +0000
+@@ -55,6 +55,7 @@
+ struct symbol_table {
+   struct cfunction* cfunctions;
+   int ncfunctions;
++  int lencfunctions;
+   jv cfunc_names;
+ };
+ 
+--- src/compile.c.orig	2019-05-21 05:33:58 +0000
++++ src/compile.c	2019-05-21 05:36:03 +0000
+@@ -1257,6 +1257,7 @@
+       int idx = bc->globals->ncfunctions++;
+       bc->globals->cfunc_names = jv_array_append(bc->globals->cfunc_names,
+                                                  jv_string(curr->symbol));
++      assert(idx <= bc->globals->lencfunctions);
+       bc->globals->cfunctions[idx] = *curr->imm.cfunc;
+       curr->imm.intval = idx;
+     }
+@@ -1359,8 +1360,13 @@
+   bc->nclosures = 0;
+   bc->globals = jv_mem_alloc(sizeof(struct symbol_table));
+   int ncfunc = count_cfunctions(b);
++  bc->globals->lencfunctions = ncfunc;
+   bc->globals->ncfunctions = 0;
+-  bc->globals->cfunctions = jv_mem_calloc(sizeof(struct cfunction), ncfunc);
++  if (ncfunc > 0) {
++    bc->globals->cfunctions = jv_mem_calloc(sizeof(struct cfunction), ncfunc);
++  } else {
++    bc->globals->cfunctions = NULL;
++  }
+   bc->globals->cfunc_names = jv_array();
+   bc->debuginfo = jv_object_set(jv_object(), jv_string("name"), jv_null());
+   jv env = jv_invalid();
+ 

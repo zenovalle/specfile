@@ -1,0 +1,14 @@
+--- src/builtin.c.orig	2019-05-10 02:29:13 +0000
++++ src/builtin.c	2019-05-10 02:31:12 +0000
+@@ -1,7 +1,11 @@
+ #define _BSD_SOURCE
+ #define _GNU_SOURCE
+ #ifndef __sun__
++#if defined(_AIX)       /* AIX */
++#define _XOPEN_SOURCE 600
++#elif
+ # define _XOPEN_SOURCE
++#endif   /* _AIX */
+ # define _XOPEN_SOURCE_EXTENDED 1
+ #else
+ # define _XPG6
