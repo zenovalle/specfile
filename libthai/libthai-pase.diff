@@ -1,0 +1,19 @@
+--- libthai-0.1.28-old/configure.ac	2018-08-01 04:59:55 +0000
++++ libthai-0.1.28/configure.ac	2019-08-12 16:58:19 +0000
+@@ -86,16 +86,7 @@
+               , enable_doxygen_doc="yes")
+ 
+ if test "x$enable_doxygen_doc" = "xyes"; then
+-  AC_CHECK_PROG(DOXYGEN,doxygen,doxygen,no)
+-  if test "x$DOXYGEN" = "xno"; then
+     enable_doxygen_doc="no"
+-  else
+-    AC_MSG_CHECKING([doxygen >= $DOXYGEN_REQ_VER])
+-    DOXYGEN_VER=$($DOXYGEN --version)
+-    AX_COMPARE_VERSION([$DOXYGEN_VER],[ge],[DOXYGEN_REQ_VER], 
+-                       [AC_MSG_RESULT([$DOXYGEN_VER, yes])], 
+-                       [AC_MSG_RESULT([$DOXYGEN_VER, no, documentation disabled]); enable_doxygen_doc="no"])
+-  fi
+ fi
+ 
+ dnl where to install the doxygen-generated HTML doc
