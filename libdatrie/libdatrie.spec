@@ -6,6 +6,7 @@ License:	LGPL
 Group:		System/Libraries
 URL:		http://linux.thai.net
 Source0:	ftp://linux.thai.net/pub/ThaiLinux/software/libthai/%{name}-%{version}.tar.xz
+# AIX header dumb, rip out Doxygen until that gets packaged
 Patch0:         datrie-pase.diff
 BuildRequires:	pkg-config, libiconv-devel, automake, autoconf
 
