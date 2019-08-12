@@ -1,0 +1,35 @@
+--- libdatrie-0.2.11/datrie/typedefs.h	2017-01-21 16:30:40 +0000
++++ libdatrie-0.2.11-new/datrie/typedefs.h	2019-08-12 15:23:52 +0000
+@@ -29,6 +29,13 @@
+ 
+ #include <limits.h>
+ 
++/* AIX... */
++#ifdef FALSE
++#undef FALSE
++#endif
++#ifdef TRUE
++#undef TRUE
++#endif
+ typedef enum { FALSE = 0, TRUE = 1 } Bool;
+ 
+ # if UCHAR_MAX == 0xff
+--- libdatrie-0.2.11/configure.ac	2018-04-23 04:13:46 +0000
++++ libdatrie-0.2.11-new/configure.ac	2019-08-12 15:02:29 +0000
+@@ -110,16 +110,7 @@
+               , enable_doxygen_doc="yes")
+ 
+ if test "x$enable_doxygen_doc" = "xyes"; then
+-  AC_CHECK_PROG(DOXYGEN,doxygen,doxygen,no)
+-  if test "x$DOXYGEN" = "xno"; then
+     enable_doxygen_doc="no"
+-  else
+-    AC_MSG_CHECKING([doxygen >= $DOXYGEN_REQ_VER])
+-    DOXYGEN_VER=$($DOXYGEN --version)
+-    AX_COMPARE_VERSION([$DOXYGEN_VER],[ge],[DOXYGEN_REQ_VER], 
+-                       [AC_MSG_RESULT([$DOXYGEN_VER, yes])], 
+-                       [AC_MSG_RESULT([$DOXYGEN_VER, no, documentation disabled]); enable_doxygen_doc="no"])
+-  fi
+ fi
+ 
+ dnl where to install the doxygen-generated HTML doc
