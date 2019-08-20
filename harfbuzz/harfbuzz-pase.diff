@@ -75,7 +75,7 @@ index 9799edd..15fdd84 100644
 +#undef STAT
  HB_OT_TABLE (OT, STAT)
  #endif
- 
+ #ifndef HB_NO_META
 diff --git a/src/hb-ot-stat-table.hh b/src/hb-ot-stat-table.hh
 index 98bdfa3..a13c59f 100644
 --- a/src/hb-ot-stat-table.hh

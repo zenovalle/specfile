@@ -1,5 +1,5 @@
 Name:           harfbuzz
-Version:        2.5.3
+Version:        2.6.0
 Release:        1
 Summary:        Text shaping library
 License:        MIT
@@ -11,7 +11,7 @@ Patch0:         harfbuzz-pase.diff
 # XXX: We need for a better functioning harfbuzz:
 #   - ICU (AIX LPP shipped with PASE is decrepit and requires oodles of patch)
 #   - Graphite2 (option but assists fonts)
-#   - GObject and introspection
+#   - GObject introspection
 #   - Some tests would like a Cairo built with RSVG, but optional as of 2.5.3
 BuildRequires:  freetype-devel, fontconfig-devel
 BuildRequires:  cairo-devel
@@ -53,7 +53,7 @@ autoreconf -fiv .
         LDFLAGS="-pthread -Wl,-brtl -Wl,-blibpath:%{_libdir}:/QOpenSys/usr/lib -L%{_libdir}" \
         CPPFLAGS="-Wno-attributes" \
         --with-aix-soname=svr4 \
-	--with-glib=yes \
+	--with-glib=yes --with-gobject=yes \
 	--with-freetype=yes \
         --disable-silent-rules \
         --enable-shared  --disable-static
@@ -84,6 +84,10 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_libdir}/cmake/harfbuzz/harfbuzz-config.cmake
 
 %changelog
+* Mon Aug 19 2019 Calvin Buckley <calvin@cmpct.info> - 2.6.0-1
+- Bump to 2.6.0
+- Enable GObject (but not introspection, as that is a seperate package)
+
 * Mon Aug 05 2019 Calvin Buckley <calvin@cmpct.info> - 2.5.3-1
 - Bump to a modern version
 - Update for PASE
