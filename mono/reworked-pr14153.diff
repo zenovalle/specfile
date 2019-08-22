@@ -1,0 +1,80 @@
+diff --git a/configure.ac b/configure.ac
+index a2c24a914ed9..7e69112622a9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -62,7 +62,7 @@ MONO_VERSION_BUILD=`echo $VERSION | cut -d . -f 3`
+ # This line is parsed by tools besides autoconf, such as msvc/mono.winconfig.targets.
+ # It should remain in the format they expect.
+ #
+-MONO_CORLIB_VERSION=69f9feb5-e6ef-4d90-8722-17346c85efb6
++MONO_CORLIB_VERSION=c13a0b28-8737-486c-acd4-4da2d861b573
+ 
+ #
+ # Put a quoted #define in config.h.
+diff --git a/mcs/class/System/System.Diagnostics/PerformanceCounter.cs b/mcs/class/System/System.Diagnostics/PerformanceCounter.cs
+index e388d063edd1..bfb97e75825a 100644
+--- a/mcs/class/System/System.Diagnostics/PerformanceCounter.cs
++++ b/mcs/class/System/System.Diagnostics/PerformanceCounter.cs
+@@ -126,9 +126,8 @@ public PerformanceCounter ()
+ 		}
+ 
+ 		[MethodImplAttribute (MethodImplOptions.InternalCall)]
+-		static private unsafe extern IntPtr GetImpl_icall (char *category, int category_length,
+-			char *counter, int counter_length, char *instance, int instance_length,
+-			out PerformanceCounterType ctype, out bool custom);
++		static private unsafe extern IntPtr GetImpl_icall (char *category,
++			char *counter, char *instance, out PerformanceCounterType ctype, out bool custom);
+ 
+ 		static unsafe IntPtr GetImpl (string category, string counter,
+ 				string instance, out PerformanceCounterType ctype, out bool custom)
+@@ -136,10 +135,7 @@ public PerformanceCounter ()
+ 			fixed (char* fixed_category = category,
+ 				     fixed_counter = counter,
+ 				     fixed_instance = instance) {
+-				return GetImpl_icall (fixed_category, category?.Length ?? 0,
+-					fixed_counter, counter?.Length ?? 0,
+-					fixed_instance, instance?.Length ?? 0,
+-					out ctype, out custom);
++				return GetImpl_icall (fixed_category, fixed_counter, fixed_instance, out ctype, out custom);
+ 			}
+ 		}
+ 
+diff --git a/mono/metadata/icall-def.h b/mono/metadata/icall-def.h
+index 93d6876c532c..eb18ed1faf18 100644
+--- a/mono/metadata/icall-def.h
++++ b/mono/metadata/icall-def.h
+@@ -277,8 +277,7 @@ ICALL(FILEV_1, "GetVersionInfo_internal(string)", ves_icall_System_Diagnostics_F
+ 
+ ICALL_TYPE(PERFCTR, "System.Diagnostics.PerformanceCounter", PERFCTR_1)
+ NOHANDLES(ICALL(PERFCTR_1, "FreeData", mono_perfcounter_free_data))
+-HANDLES(PERFCTR_2, "GetImpl_icall", mono_perfcounter_get_impl, gpointer, 8,
+-	(const_gunichar2_ptr, gint32, const_gunichar2_ptr, gint32, const_gunichar2_ptr, gint32, gint32_ref, MonoBoolean_ref))
++HANDLES(PERFCTR_2, "GetImpl_icall", mono_perfcounter_get_impl, gpointer, 5, (const_gunichar2_ptr, const_gunichar2_ptr, const_gunichar2_ptr, gint32_ref, MonoBoolean_ref))
+ NOHANDLES(ICALL(PERFCTR_3, "GetSample", mono_perfcounter_get_sample))
+ NOHANDLES(ICALL(PERFCTR_4, "UpdateValue", mono_perfcounter_update_value))
+ 
+diff --git a/mono/metadata/mono-perfcounters.c b/mono/metadata/mono-perfcounters.c
+index 2970e083dc46..f8dadb5a9daa 100644
+--- a/mono/metadata/mono-perfcounters.c
++++ b/mono/metadata/mono-perfcounters.c
+@@ -1335,11 +1335,17 @@ find_category (const gunichar2 *category, int category_length)
+ }
+ 
+ void*
+-mono_perfcounter_get_impl (const gunichar2 *category, gint32 category_length,
+-		const gunichar2 *counter, gint32 counter_length,
+-		const gunichar2 *instance, gint32 instance_length,
++mono_perfcounter_get_impl (const gunichar2 *category,
++		const gunichar2 *counter,
++		const gunichar2 *instance,
+ 		gint32 *type, MonoBoolean *custom, MonoError *error)
+ {
++	// FIXME These lengths should come from managed, but experimenting
++	// due to PowerPC crash.
++	gint32 category_length = category ? g_utf16_len (category) : 0;
++	gint32 counter_length = counter ? g_utf16_len (counter) : 0;
++	gint32 instance_length = instance ? g_utf16_len (instance) : 0;
++
+ 	const CategoryDesc *cdesc;
+ 	void *result = NULL;
+ 	cdesc = find_category (category, category_length);

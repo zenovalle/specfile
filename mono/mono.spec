@@ -1,14 +1,19 @@
 Name: mono
-Version: 6.5.0.93
+Version: 6.7.0.235
 Release: 1
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
 
-%define mono_corlib_version 62731146-81CF-4D61-826D-9A8DDED14432
+%define mono_corlib_version 69f9feb5-e6ef-4d90-8722-17346c85efb6
 Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.xz
 # XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
+
+# Reverts MailKit regression per Richard
+Patch0: revert-068e8fe0424806753d7ab72a7b9bf0e54b58408b.diff
+# Reverts crashes in things like XSP
+Patch1: reworked-pr14153.diff
 
 # XXX: Incomplete list
 BuildRequires: libtool
@@ -34,6 +39,8 @@ BuildRequires: python2
 BuildRequires: curl
 BuildRequires: wget
 BuildRequires: bash
+# Not hooked up to build just yet; future PR will enable this to be used
+BuildRequires: libutil-devel
 #Recommends:     libgdiplus0
 
 
@@ -47,6 +54,8 @@ development of cross platform applications.
 %prep
 
 %setup -q
+%patch0 -p1
+%patch1 -p1
 
 echo cleaning up monolite dirs
 rm -rf mcs/class/lib/monolite-unix/%{mono_corlib_version}/*
@@ -85,7 +94,8 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %package -n mono-core
 Summary: The Mono CIL runtime, suitable for running .NET code
 # Use this if runtime is dynamically linked
-Requires: libmono-2_0-1
+#Requires: libmono-2_0-1
+Requires: libmonosgen-2_0-1
 # Dependencies of helper libs
 Requires: libz1, libiconv2, libstdcplusplus6, libintl9
 
@@ -115,6 +125,7 @@ I18N, Cairo and Mono.*).
 
 %{_bindir}/al
 %{_bindir}/al2
+%{_bindir}/aprofutil
 %{_bindir}/cert-sync
 %{_bindir}/certmgr
 %{_bindir}/chktrust
@@ -128,6 +139,7 @@ I18N, Cairo and Mono.*).
 %{_bindir}/mcs
 %{_bindir}/mono
 %{_bindir}/mono-configuration-crypto
+%{_bindir}/mono-hang-watchdog
 %{_bindir}/mono-sgen
 %{_bindir}/mono-test-install
 %{_bindir}/mozroots
@@ -143,6 +155,7 @@ I18N, Cairo and Mono.*).
 # Mono prefers loading `.so` by default.
 %{_libdir}/libmono-native.so*
 
+%{_mandir}/man1/aprofutil.1
 %{_mandir}/man1/cert-sync.1
 %{_mandir}/man1/certmgr.1
 %{_mandir}/man1/chktrust.1
@@ -164,6 +177,7 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/System.IO.Compression.FileSystem.dll
 %{_libdir}/mono/4.5/System.IO.Compression.dll
 %{_libdir}/mono/4.5/al.exe*
+%{_libdir}/mono/4.5/aprofutil.exe*
 %{_libdir}/mono/4.5/cert-sync.exe*
 %{_libdir}/mono/4.5/certmgr.exe*
 %{_libdir}/mono/4.5/chktrust.exe*
@@ -560,7 +574,7 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.5/System.Reflection.Metadata.dll
 %{_libdir}/mono/4.5/VBCSCompiler.*
 
-
+# TODO: Merge libmono and libmonosgen because it's stubby
 # libmono is a symlink to libmonosgen provided for compat
 %package -n libmono-2_0-1
 Summary: A Library for embedding Mono in your Application
@@ -648,8 +662,8 @@ Development files for libmonosgen.
 Summary: Database connectivity for Mono
 License: MIT X11
 Requires: mono-core = %{version}
-Requires: libodbc2
-# XXX: also unixODBC?
+# Include the tools instead of just libodbc2
+Requires: unixODBC
 
 %description -n mono-data
 The Mono Project is an open development initiative that is working to
@@ -759,6 +773,10 @@ Database connectivity for Oracle.
 Summary: Mono's Windows Forms implementation
 License: MIT X11
 Requires: mono-core = %{version}
+#Requires: libgdiplus0
+Requires: libX11
+Requires: libXcursor
+Requires: libXinerama
 
 %description -n mono-winforms
 The Mono Project is an open development initiative that is working to
@@ -1248,18 +1266,24 @@ Monodoc-core contains documentation tools for C#.
 
 %files -n monodoc-core
 %defattr(-, qsys, *none)
-%{_bindir}/mdassembler
-%{_bindir}/mdoc
-%{_bindir}/mdoc-assemble
-%{_bindir}/mdoc-export-html
-%{_bindir}/mdoc-export-msxdoc
-%{_bindir}/mdoc-update
-%{_bindir}/mdoc-validate
-%{_bindir}/mdvalidater
+# These depend on mdoc, which is unhooked from build as of 7ab3811b934779c0622f6343ab2b75d64099e3d0
+# The scripts on the no longer installed mdoc.exe, which will break
+# This sub-package should probably be removed in favour of packaging https://github.com/mono/api-doc-tools soon,
+# by fixing mcs to work with modern mdoc,
+# patching mdoc, (https://gist.github.com/NattyNarwhal/b4945bc5e1f5213d5eaa8303261416bd)
+# or by fixing up Roslyn to be good enough on PPC (far harder than it sounds)
+%exclude %{_bindir}/mdassembler
+%exclude %{_bindir}/mdoc
+%exclude %{_bindir}/mdoc-assemble
+%exclude %{_bindir}/mdoc-export-html
+%exclude %{_bindir}/mdoc-export-msxdoc
+%exclude %{_bindir}/mdoc-update
+%exclude %{_bindir}/mdoc-validate
+%exclude %{_bindir}/mdvalidater
 %{_bindir}/mod
-%{_bindir}/monodocer
-%{_bindir}/monodocs2html
-%{_bindir}/monodocs2slashdoc
+%exclude %{_bindir}/monodocer
+%exclude %{_bindir}/monodocs2html
+%exclude %{_bindir}/monodocs2slashdoc
 %{_libdir}/pkgconfig/monodoc.pc
 %{_mandir}/man1/mdassembler.1
 %{_mandir}/man1/mdoc-assemble.1
@@ -1272,7 +1296,7 @@ Monodoc-core contains documentation tools for C#.
 %{_mandir}/man1/monodocer.1
 %{_mandir}/man1/monodocs2html.1
 %{_mandir}/man5/mdoc.5
-%{_prefix}/lib/mono/4.5/mdoc.exe*
+#%{_prefix}/lib/mono/4.5/mdoc.exe*
 %{_prefix}/lib/mono/4.5/mod.exe*
 %{_prefix}/lib/mono/gac/monodoc
 %{_prefix}/lib/mono/monodoc
@@ -1314,6 +1338,13 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+
+* Tue Aug 20 2019 Calvin Buckley <calvin@cmpct.into> - 6.7.0.253-1
+- Update version
+- Ship hang watchdog and aprofutil
+- Revert some commits to unbreak behaviour (not real fixes, but mitigates real world problems, blech)
+- Fix up dependency graph (but don't merge packages, bad idea)
+- Unhook mdoc executables from packaging due to mdoc not compiling with mcs (and explain workarounds for future me)
 
 * Fri Mar 29 2019 Calvin Buckley <calvin@cmpct.info> - 6.1.0.713-1
 - Update version
