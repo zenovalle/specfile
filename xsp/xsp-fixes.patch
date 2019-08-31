@@ -1,0 +1,95 @@
+From 9f3069f1e411b3a0ac7871dfb62c98dce1e55a8b Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Thu, 27 Jun 2019 00:03:02 -0400
+Subject: [PATCH 1/2] Update Mono.Sqlite checks for .NET 4.5 GAC
+
+---
+ configure.ac | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index ad9add1e..2d353bb8 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -72,9 +72,9 @@ if test "x$DMCS" = "xno" ; then
+ 	AC_MSG_ERROR([No $CS compiler found. dmcs must be installed.])
+ fi
+ 
+-AC_MSG_CHECKING([for Mono 4.0 GAC for Mono.Data.Sqlite.dll])
+-if test -e "$($PKG_CONFIG --variable=libdir mono)/mono/4.0/Mono.Data.Sqlite.dll" -o \
+-        -e "$($PKG_CONFIG --variable=prefix mono)/lib/mono/4.0/Mono.Data.Sqlite.dll"; then
++AC_MSG_CHECKING([for Mono 4.5 GAC for Mono.Data.Sqlite.dll])
++if test -e "$($PKG_CONFIG --variable=libdir mono)/mono/4.5/Mono.Data.Sqlite.dll" -o \
++        -e "$($PKG_CONFIG --variable=prefix mono)/lib/mono/4.5/Mono.Data.Sqlite.dll"; then
+ 	AC_MSG_RESULT([found])
+ 	HAVE_MONO_SQLITE=yes
+ else
+
+From a2747f48293657c4d35852270b4911337d78f0e1 Mon Sep 17 00:00:00 2001
+From: Calvin Bcukley <calvin@cmpct.info>
+Date: Thu, 27 Jun 2019 00:03:26 -0400
+Subject: [PATCH 2/2] Rename shim log call to shim_log
+
+This is because a header could import libm's headers, and that
+would clobber the shim's log function. Fixes build on IBM i.
+---
+ shim/shim.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/shim/shim.c b/shim/shim.c
+index 3a50b939..d520ed16 100644
+--- a/shim/shim.c
++++ b/shim/shim.c
+@@ -45,7 +45,7 @@ void log1 (char * str)
+     printf("%s\n", str);
+ }
+ 
+-void log(char * fmt, ...)
++void shim_log (char * fmt, ...)
+ {
+     if(!debug) return;
+     print_prefix ();
+@@ -67,7 +67,7 @@ ssize_t send_int (int fd, int value)
+     char buffer [size + 1];
+     snprintf (buffer, size + 1, "%d", value);
+     buffer [size] = 0;
+-    log("%d (%s) has size %d", value, buffer, size);
++    shim_log ("%d (%s) has size %d", value, buffer, size);
+     return send_string (fd, buffer);
+ }
+ 
+@@ -131,14 +131,14 @@ pid_t spawn (int fd, char * params [])
+     child = fork ();
+     if (child) {
+         send_int (fd, child);
+-        log ("Sent pid %d", child);
++        shim_log ("Sent pid %d", child);
+         exit (0);
+         return -1;
+     }
+ 
+     log1 ("Reforked!");
+ 
+-    log ("Running %s", *params);
++    shim_log ("Running %s", *params);
+ 
+     if (execv (*params, params) == -1) {
+         perror ("execv");
+@@ -197,7 +197,7 @@ int main (int argc, char * argv [], char *envp[])
+     debug = debug_env && (debug_env[0] == 'y' || debug_env[0] == 'Y');
+ 
+     log1 ("Started.");
+-    log ("I'm uid %d euid %d gid %d egid %d", getuid (), geteuid (), getgid (), getegid ());
++    shim_log ("I'm uid %d euid %d gid %d egid %d", getuid (), geteuid (), getgid (), getegid ());
+ 
+     if (argc <= 2) {
+         fprintf (stderr, "Usage: %s <socket> <command>\n", argv [0]);
+@@ -207,7 +207,7 @@ int main (int argc, char * argv [], char *envp[])
+     const char * path = argv [1];
+ 	char ** params = argv + 2;
+ 
+-    log ("Will run %s", *params);
++    shim_log ("Will run %s", *params);
+ 
+     int local_fd;
+     if (!start_server (path, &local_fd))
