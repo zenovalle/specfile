@@ -4,7 +4,7 @@
 
 Name: R
 Version: 3.6.1
-Release: 7qsecofr
+Release: 8qsecofr
 License: GPL-2.0-only
 Summary: R Programming Language
 Url: https://www.r-project.org
@@ -76,16 +76,16 @@ The R-devel package contains the files needed for building R extensions.
 # export JAVA_HOME=/QOpenSys/QIBM/ProdData/JavaVM/jdk80/64bit
 
 %configure \
-    CFLAGS="-I%{_includedir} -I%{_includedir}/libiconv -ftls-model=global-dynamic" \
-    CPPFLAGS="-I%{_includedir} -I%{_includedir}/libiconv" \
-    CXXPICFLAGS="-I%{_includedir} -I%{_includedir}/libiconv -ftls-model=global-dynamic -fPIC -fpic -DPIC" \
+    CFLAGS="-I%{_includedir} -I%{_includedir}/libiconv -pthread -ftls-model=global-dynamic" \
+    CPPFLAGS="-I%{_includedir} -I%{_includedir}/libiconv -pthread" \
+    CXXPICFLAGS="-I%{_includedir} -I%{_includedir}/libiconv -pthread -ftls-model=global-dynamic -fPIC -fpic -DPIC" \
     LDFLAGS="-pthread -liconv -Wl,-brtl,-liconv,-bbigtoc,-bnoexpall,-blibpath:%{_libdir}:%{_libdir}/R/lib:/QOpenSys/usr/lib" \
-    SHLIB_CXX14LDFLAGS="-shared -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
-    SHLIB_CXX17LDFLAGS="-shared -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
-    SHLIB_CXXLDFLAGS="-shared -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
-    SHLIB_FCLDFLAGS="-shared -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
-    SHLIB_LDFLAGS="-shared -Wl,-brtl,-bnoquiet,-bnoexpall -lc -lm" \
-    DYLIB_LDFLAGS="-shared -Wl,-brtl,-bnoquiet,-bnoexpall -lc -lm" \
+    SHLIB_CXX14LDFLAGS="-shared -pthread -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
+    SHLIB_CXX17LDFLAGS="-shared -pthread -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
+    SHLIB_CXXLDFLAGS="-shared -pthread -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
+    SHLIB_FCLDFLAGS="-shared -pthread -Wl,-brtl -Wl,-bnoquiet -lc -lm" \
+    SHLIB_LDFLAGS="-shared -pthread -Wl,-brtl,-bnoquiet,-bnoexpall -lc -lm" \
+    DYLIB_LDFLAGS="-shared -pthread -Wl,-brtl,-bnoquiet,-bnoexpall -lc -lm" \
     --enable-R-shlib \
     --enable-static=no \
     --disable-static \
@@ -133,6 +133,9 @@ rm %{buildroot}%{_libdir}/charset.alias || :
 
 
 %changelog
+
+* Wed Sep 4 2019 Calvin Buckley <calvin@cmpct.info> - 3.6.1-8qsecofr
+- Make shared libraries for packages include pthread (unbreaks std::mutex, which some use; a lot of references, but...)
 
 * Wed Aug 7 2019 Calvin Buckley <calvin@cmpct.info> - 3.6.1-7qsecofr
 - Just bump it to latest
