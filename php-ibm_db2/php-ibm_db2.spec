@@ -2,7 +2,7 @@
 %define php_version 7.3
 Name:        php-ibm_db2
 Version:     2.0.8
-Release:     7qsecofr
+Release:     8qsecofr
 Summary:     Extension for IBM DB2 Universal Database, IBM Cloudscape, and Apache Derby
 
 License:     Apache-2.0
@@ -79,6 +79,9 @@ install -D -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/php/conf.d/99-ibm_db2.in
 %{_libdir}/php-%{php_version}/extensions/ibm_db2.so
 
 %changelog
+* Tue Dec 3 2019 Calvin Buckley <calvin@cmpct.info> - 2.0.9-9qsecofr
+- Fix clobbered INI
+
 * Tue Dec 3 2019 Calvin Buckley <calvin@cmpct.info> - 2.0.9-7qsecofr
 - Use CPY instead of Rfile, as Massimo points out
 
