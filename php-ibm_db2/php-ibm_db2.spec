@@ -2,7 +2,7 @@
 %define php_version 7.3
 Name:        php-ibm_db2
 Version:     2.0.8
-Release:     6qsecofr
+Release:     7qsecofr
 Summary:     Extension for IBM DB2 Universal Database, IBM Cloudscape, and Apache Derby
 
 License:     Apache-2.0
@@ -37,11 +37,11 @@ Cloudscape, and Apache Derby databases.
 # XXX: May be a good idea to turn Cairns' libdb400 replacement into
 # an RPM.
 mkdir include
-Rfile -r /QIBM/include/sql.h > ./include/sql.h
-Rfile -r /QIBM/include/sqlca.h > ./include/sqlca.h
-Rfile -r /QIBM/include/sqlcli.h > ./include/sqlcli.h
-Rfile -r /QIBM/include/sqlsystm.h > ./include/sqlsystm.h
-Rfile -r /QIBM/include/sqludf.h > ./include/sqludf.h
+# We have to use CPY instead of reading with Rfile because of CCSIDs.
+for header in $(ls /QIBM/include/sql*.h)
+do
+	system -v "CPY OBJ('$header') TODIR('./include') TOCCSID(*STDASCII) DTAFMT(*TEXT) REPLACE(*YES)"
+done
 cp %{SOURCE2} ./include/sqlcli1.h
 
 %build
@@ -79,6 +79,9 @@ install -D -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/php/conf.d/99-ibm_db2.in
 %{_libdir}/php-%{php_version}/extensions/ibm_db2.so
 
 %changelog
+* Tue Dec 3 2019 Calvin Buckley <calvin@cmpct.info> - 2.0.9-7qsecofr
+- Use CPY instead of Rfile, as Massimo points out
+
 * Mon Dec 2 2019 Calvin Buckley <calvin@cmpct.info - 2.0.8-6qsecofr
 - Fix on environments without SQL/CLI headers installed globally
 - Polish dependencies further
