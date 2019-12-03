@@ -1,0 +1,198 @@
+diff --git a/cmake/ConfigureChecks.cmake b/cmake/ConfigureChecks.cmake
+index 22b0066..c1a338e 100644
+--- a/cmake/ConfigureChecks.cmake
++++ b/cmake/ConfigureChecks.cmake
+@@ -29,11 +29,20 @@ INCLUDE(CheckStructHasMember)
+ INCLUDE(CheckCXXSourceCompiles)
+ INCLUDE(CheckTypeSize)
+ INCLUDE(CMakePushCheckState)
++# Checks for PASE (IBM i AIX compat environment)
++if(${CMAKE_SYSTEM_NAME} STREQUAL "OS400")
++  # This is a special library for PASE containing getopt_long and friends.
++  link_libraries("-lutil")
++  # Make the next check look in libutil.
++  # We have backtrace_symbols, but not dladdr, so it's not too useful just yet.
++  set(CMAKE_REQUIRED_LIBRARIES util)
++endif()
+ CHECK_CXX_SYMBOL_EXISTS(backtrace_symbols execinfo.h HAVE_BACKTRACE_SYMBOLS)
+ CHECK_CXX_SYMBOL_EXISTS(clock_gettime time.h HAVE_CLOCK_GETTIME)
+ CHECK_CXX_SYMBOL_EXISTS(ctermid_r stdio.h HAVE_CTERMID_R)
+ CHECK_STRUCT_HAS_MEMBER("struct dirent" d_type dirent.h HAVE_STRUCT_DIRENT_D_TYPE LANGUAGE CXX)
+ CHECK_CXX_SYMBOL_EXISTS(dirfd "sys/types.h;dirent.h" HAVE_DIRFD)
++CHECK_CXX_SYMBOL_EXISTS(dladdr "dlfcn.h" HAVE_DLADDR)
+ CHECK_INCLUDE_FILE_CXX(execinfo.h HAVE_EXECINFO_H)
+ CHECK_CXX_SYMBOL_EXISTS(flock sys/file.h HAVE_FLOCK)
+ # futimens is new in OS X 10.13 but is a weak symbol.
+diff --git a/config_cmake.h.in b/config_cmake.h.in
+index 8071546..f4ef3d2 100644
+--- a/config_cmake.h.in
++++ b/config_cmake.h.in
+@@ -13,6 +13,9 @@
+ /* Define to 1 if you have the `dirfd' function. */
+ #cmakedefine HAVE_DIRFD 1
+ 
++/* Define to 1 if you have the `dladdr' function. */
++#cmakedefine HAVE_DLADDR 1
++
+ /* Define to 1 if you have the <execinfo.h> header file. */
+ #cmakedefine HAVE_EXECINFO_H 1
+ 
+diff --git a/src/common.cpp b/src/common.cpp
+index 761c2d0..07f028f 100644
+--- a/src/common.cpp
++++ b/src/common.cpp
+@@ -144,7 +144,7 @@ long convert_hex_digit(wchar_t d) {
+     return -1;
+ }
+ 
+-#ifdef HAVE_BACKTRACE_SYMBOLS
++#if defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR)
+ // This function produces a stack backtrace with demangled function & method names. It is based on
+ // https://gist.github.com/fmela/591333 but adapted to the style of the fish project.
+ static const wcstring_list_t __attribute__((noinline))
+diff --git a/src/common.h b/src/common.h
+index f0a4be5..f3587b9 100644
+--- a/src/common.h
++++ b/src/common.h
+@@ -103,6 +103,9 @@ typedef std::vector<wcstring> wcstring_list_t;
+ #if defined(MAXNAMELEN)
+ // MAXNAMELEN is defined on Linux, BSD, and Solaris among others
+ #define NAME_MAX MAXNAMELEN
++#elif _AIX
++// XXX: This should be using pathconf per header
++#define NAME_MAX 255
+ #else
+ static_assert(false, "Neither NAME_MAX nor MAXNAMELEN is defined!");
+ #endif
+diff --git a/src/env.cpp b/src/env.cpp
+index 7d0b006..c743fc6 100644
+--- a/src/env.cpp
++++ b/src/env.cpp
+@@ -975,8 +975,14 @@ void env_init(const struct config_paths_t *paths /* or NULL */) {
+ 
+     // Set g_use_posix_spawn. Default to true.
+     auto use_posix_spawn = env_get(L"fish_use_posix_spawn");
++#ifdef __PASE__
++    // IBM i 7.2 posix_spawn attrs funcs call an unimplemented syscall and explode in SIGILL
++    g_use_posix_spawn =
++        use_posix_spawn.missing_or_empty() ? false : from_string<bool>(use_posix_spawn->as_string());
++#else
+     g_use_posix_spawn =
+         use_posix_spawn.missing_or_empty() ? true : from_string<bool>(use_posix_spawn->as_string());
++#endif
+ 
+     // Set fish_bind_mode to "default".
+     env_set_one(FISH_BIND_MODE_VAR, ENV_GLOBAL, DEFAULT_BIND_MODE);
+diff --git a/src/fallback.cpp b/src/fallback.cpp
+index 41d8972..3bc00f1 100644
+--- a/src/fallback.cpp
++++ b/src/fallback.cpp
+@@ -356,6 +356,12 @@ int fish_wcswidth(const wchar_t *str, size_t n) {
+  * Emulate flock() with fcntl().
+  */
+ 
++/*
++ * Use export "C" linkage for AIX (it has a flock, but it requires libbsd,
++ * which is not good to link against; having both with different linkages
++ * confuses the linker)
++ */
++extern "C" {
+ int flock(int fd, int op) {
+     int rc = 0;
+ 
+@@ -386,6 +392,7 @@ int flock(int fd, int op) {
+ 
+     return rc;
+ }
++}
+ 
+ #endif  // HAVE_FLOCK
+ 
+diff --git a/src/fallback.h b/src/fallback.h
+index b935c84..0406c58 100644
+--- a/src/fallback.h
++++ b/src/fallback.h
+@@ -189,7 +189,9 @@ int killpg(int pgr, int sig);
+ /// Fallback implementation of flock in terms of fcntl.
+ /// Danger! The semantics of flock and fcntl locking are very different.
+ /// Use with caution.
++extern "C" {
+ int flock(int fd, int op);
++}
+ 
+ #define LOCK_SH 1  // Shared lock.
+ #define LOCK_EX 2  // Exclusive lock.
+diff --git a/src/history.cpp b/src/history.cpp
+index a2b4bb0..90ec42c 100644
+--- a/src/history.cpp
++++ b/src/history.cpp
+@@ -270,7 +270,11 @@ class history_file_contents_t {
+                 ptr += amt;
+             }
+         }
++#ifdef _AIX
++        memset(ptr, 0, remaining);
++#else
+         bzero(ptr, remaining);
++#endif
+         return true;
+     }
+ 
+diff --git a/src/output.cpp b/src/output.cpp
+index 129ed70..76ea509 100644
+--- a/src/output.cpp
++++ b/src/output.cpp
+@@ -552,7 +552,11 @@ rgb_color_t parse_color(const env_var_t &var, bool is_background) {
+ /// Write specified multibyte string.
+ void writembs_check(char *mbs, const char *mbs_name, bool critical, const char *file, long line) {
+     if (mbs != NULL) {
++#ifdef _AIX
++        tputs(mbs, 1, (int (*)(int))(&writeb));
++#else
+         tputs(mbs, 1, &writeb);
++#endif
+     } else if (critical) {
+         auto term = env_get(L"TERM");
+         const wchar_t *fmt =
+diff --git a/src/proc.cpp b/src/proc.cpp
+index f61b2d0..62a975d 100644
+--- a/src/proc.cpp
++++ b/src/proc.cpp
+@@ -608,7 +608,11 @@ static void format_job_info(const job_t *j, job_status_t status) {
+     fwprintf(stdout, L"\r");
+     fwprintf(stdout, _(msg), j->job_id, truncate_command(j->command()).c_str());
+     fflush(stdout);
++#ifdef _AIX
++    if (clr_eol) tputs(clr_eol, 1, (int (*)(int))(&writeb));
++#else
+     if (clr_eol) tputs(clr_eol, 1, &writeb);
++#endif
+     fwprintf(stdout, L"\n");
+ }
+ 
+@@ -713,7 +717,11 @@ static int process_clean_after_marking(bool allow_interactive) {
+                              signal_get_desc(WTERMSIG(p->status)));
+                 }
+ 
++#ifdef _AIX
++                if (clr_eol) tputs(clr_eol, 1, (int (*)(int))(&writeb));
++#else
+                 if (clr_eol) tputs(clr_eol, 1, &writeb);
++#endif
+                 fwprintf(stdout, L"\n");
+             }
+             found = 1;
+diff --git a/src/wutil.cpp b/src/wutil.cpp
+index 2dc2501..793c352 100644
+--- a/src/wutil.cpp
++++ b/src/wutil.cpp
+@@ -15,7 +15,9 @@
+ #if defined(__linux__)
+ #include <sys/statfs.h>
+ #endif
++#ifndef _AIX
+ #include <sys/mount.h>
++#endif
+ #include <sys/statvfs.h>
+ #include <sys/types.h>
+ #include <unistd.h>
