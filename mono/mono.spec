@@ -1,25 +1,24 @@
 Name: mono
-Version: 6.7.0.235
-Release: 1
+Version: 6.11.0.137
+Release: 1qsecofr
 License: MIT X11, Mozilla.MPL, Ms-PL, Info-ZIP, GPLv2, Creative Commons 2.5, Creative Commons 4.0 Public License with included packages using 3-clause BSD
 Summary: Cross-platform, Open Source, .NET development framework 
 Url: https://www.mono-project.com/
 
-%define mono_corlib_version 69f9feb5-e6ef-4d90-8722-17346c85efb6
+%define mono_corlib_version 3bf09a16-d684-401b-ae3c-2015596b0194
 Source0: https://download.mono-project.com/sources/mono/nightly/mono-%{version}.tar.xz
 # XXX: Why are we downloadng monolite seperate if we're using a tarball?
 Source1: http://download.mono-project.com/monolite/monolite-unix-%{mono_corlib_version}-latest.tar.gz
 
-# Reverts MailKit regression per Richard
-Patch0: revert-068e8fe0424806753d7ab72a7b9bf0e54b58408b.diff
 # Reverts crashes in things like XSP
-Patch1: reworked-pr14153.diff
+Patch0: reworked-pr14153.diff
 
 # XXX: Incomplete list
 BuildRequires: libtool
 BuildRequires: grep-gnu
 BuildRequires: m4-gnu
 BuildRequires: patch-gnu
+BuildRequires: tar-gnu
 BuildRequires: coreutils-gnu
 BuildRequires: diffutils
 BuildRequires: autoconf
@@ -39,7 +38,6 @@ BuildRequires: python2
 BuildRequires: curl
 BuildRequires: wget
 BuildRequires: bash
-# Not hooked up to build just yet; future PR will enable this to be used
 BuildRequires: libutil-devel
 #Recommends:     libgdiplus0
 
@@ -55,7 +53,6 @@ development of cross platform applications.
 
 %setup -q
 %patch0 -p1
-%patch1 -p1
 
 echo cleaning up monolite dirs
 rm -rf mcs/class/lib/monolite-unix/%{mono_corlib_version}/*
@@ -65,18 +62,25 @@ tar -C mcs/class/lib/monolite-unix/%{mono_corlib_version} --strip-components 1 -
 
 
 %build
+# XXX: Completely remove soon, once most references to "python" are excised (build-essential ones are, but not fully)
 # hackity hack hack, so "/usr/bin/env python"
 mkdir -p ./tmp_python
 ln -s /QOpenSys/pkgs/bin/python2 ./tmp_python/python
 PATH=$PWD/tmp_python:$PATH
 export PATH
 
-# CONFIG_SHELL is to work around a libtool performance issue on AIX.
+# CONFIG_SHELL (and other) is to work around a libtool performance issue on AIX.
+export CONFIG_SHELL=/QOpenSys/pkgs/bin/bash
+export CONFIGURE_ENV_ARGS=/QOpenSys/pkgs/bin/bash
+
 # Force OBJECT_MODE=64. It's set for i RPM builds anyways; but may be useful
 # for a possible AIX build from the same specfile.
+export OBJECT_MODE=64
+
 # XXX: static_mono=yes seems to build a dynamic Mono with aix sonames always,
 # but it's a bit sketchy if it does or not with svr4 sonames. Play it safe.
-OBJECT_MODE=64 CONFIG_SHELL=/QOpenSys/pkgs/bin/bash autogen.sh \
+# XXX: Break into autoreconf/configure stages someday
+./autogen.sh \
   LDFLAGS=-Wl,-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib,-bnoquiet \
   --prefix=/QOpenSys/pkgs \
   --with-aix-soname=svr4 --enable-shared \
@@ -497,8 +501,247 @@ I18N, Cairo and Mono.*).
 %{_libdir}/mono/4.7.2-api/WindowsBase.dll
 %{_libdir}/mono/4.7.2-api/cscompmgd.dll
 %{_libdir}/mono/4.7.2-api/mscorlib.dll
-
-
+%{_libdir}/mono/4.8-api/Accessibility.dll
+%{_libdir}/mono/4.8-api/Commons.Xml.Relaxng.dll
+%{_libdir}/mono/4.8-api/CustomMarshalers.dll
+%{_libdir}/mono/4.8-api/Facades/Microsoft.Win32.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.AppContext.dll
+%{_libdir}/mono/4.8-api/Facades/System.Collections.Concurrent.dll
+%{_libdir}/mono/4.8-api/Facades/System.Collections.NonGeneric.dll
+%{_libdir}/mono/4.8-api/Facades/System.Collections.Specialized.dll
+%{_libdir}/mono/4.8-api/Facades/System.Collections.dll
+%{_libdir}/mono/4.8-api/Facades/System.ComponentModel.Annotations.dll
+%{_libdir}/mono/4.8-api/Facades/System.ComponentModel.EventBasedAsync.dll
+%{_libdir}/mono/4.8-api/Facades/System.ComponentModel.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.ComponentModel.TypeConverter.dll
+%{_libdir}/mono/4.8-api/Facades/System.ComponentModel.dll
+%{_libdir}/mono/4.8-api/Facades/System.Console.dll
+%{_libdir}/mono/4.8-api/Facades/System.Data.Common.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.Contracts.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.Debug.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.FileVersionInfo.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.Process.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.StackTrace.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.TextWriterTraceListener.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.Tools.dll
+%{_libdir}/mono/4.8-api/Facades/System.Diagnostics.TraceSource.dll
+%{_libdir}/mono/4.8-api/Facades/System.Drawing.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.Dynamic.Runtime.dll
+%{_libdir}/mono/4.8-api/Facades/System.Globalization.Calendars.dll
+%{_libdir}/mono/4.8-api/Facades/System.Globalization.Extensions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Globalization.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.Compression.ZipFile.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.FileSystem.DriveInfo.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.FileSystem.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.FileSystem.Watcher.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.FileSystem.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.IsolatedStorage.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.MemoryMappedFiles.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.Pipes.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.UnmanagedMemoryStream.dll
+%{_libdir}/mono/4.8-api/Facades/System.IO.dll
+%{_libdir}/mono/4.8-api/Facades/System.Linq.Expressions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Linq.Parallel.dll
+%{_libdir}/mono/4.8-api/Facades/System.Linq.Queryable.dll
+%{_libdir}/mono/4.8-api/Facades/System.Linq.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Http.Rtc.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.NameResolution.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.NetworkInformation.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Ping.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Requests.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Security.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.Sockets.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.WebHeaderCollection.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.WebSockets.Client.dll
+%{_libdir}/mono/4.8-api/Facades/System.Net.WebSockets.dll
+%{_libdir}/mono/4.8-api/Facades/System.ObjectModel.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.Emit.ILGeneration.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.Emit.Lightweight.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.Emit.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.Extensions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.Reflection.dll
+%{_libdir}/mono/4.8-api/Facades/System.Resources.Reader.dll
+%{_libdir}/mono/4.8-api/Facades/System.Resources.ResourceManager.dll
+%{_libdir}/mono/4.8-api/Facades/System.Resources.Writer.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.CompilerServices.VisualC.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Extensions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Handles.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.InteropServices.RuntimeInformation.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.InteropServices.WindowsRuntime.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.InteropServices.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Numerics.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Serialization.Formatters.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Serialization.Json.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Serialization.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.Serialization.Xml.dll
+%{_libdir}/mono/4.8-api/Facades/System.Runtime.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Claims.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Cryptography.Algorithms.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Cryptography.Csp.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Cryptography.Encoding.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Cryptography.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Cryptography.X509Certificates.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.Principal.dll
+%{_libdir}/mono/4.8-api/Facades/System.Security.SecureString.dll
+%{_libdir}/mono/4.8-api/Facades/System.ServiceModel.Duplex.dll
+%{_libdir}/mono/4.8-api/Facades/System.ServiceModel.Http.dll
+%{_libdir}/mono/4.8-api/Facades/System.ServiceModel.NetTcp.dll
+%{_libdir}/mono/4.8-api/Facades/System.ServiceModel.Primitives.dll
+%{_libdir}/mono/4.8-api/Facades/System.ServiceModel.Security.dll
+%{_libdir}/mono/4.8-api/Facades/System.Text.Encoding.Extensions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Text.Encoding.dll
+%{_libdir}/mono/4.8-api/Facades/System.Text.RegularExpressions.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.Overlapped.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.Tasks.Parallel.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.Tasks.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.Thread.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.ThreadPool.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.Timer.dll
+%{_libdir}/mono/4.8-api/Facades/System.Threading.dll
+%{_libdir}/mono/4.8-api/Facades/System.ValueTuple.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.ReaderWriter.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.XDocument.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.XPath.XDocument.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.XPath.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.XmlDocument.dll
+%{_libdir}/mono/4.8-api/Facades/System.Xml.XmlSerializer.dll
+%{_libdir}/mono/4.8-api/Facades/netstandard.dll
+%{_libdir}/mono/4.8-api/I18N.CJK.dll
+%{_libdir}/mono/4.8-api/I18N.MidEast.dll
+%{_libdir}/mono/4.8-api/I18N.Other.dll
+%{_libdir}/mono/4.8-api/I18N.Rare.dll
+%{_libdir}/mono/4.8-api/I18N.West.dll
+%{_libdir}/mono/4.8-api/I18N.dll
+%{_libdir}/mono/4.8-api/IBM.Data.DB2.dll
+%{_libdir}/mono/4.8-api/Microsoft.Build.Engine.dll
+%{_libdir}/mono/4.8-api/Microsoft.Build.Framework.dll
+%{_libdir}/mono/4.8-api/Microsoft.Build.Tasks.v4.0.dll
+%{_libdir}/mono/4.8-api/Microsoft.Build.Utilities.v4.0.dll
+%{_libdir}/mono/4.8-api/Microsoft.Build.dll
+%{_libdir}/mono/4.8-api/Microsoft.CSharp.dll
+%{_libdir}/mono/4.8-api/Microsoft.VisualBasic.dll
+%{_libdir}/mono/4.8-api/Microsoft.VisualC.dll
+%{_libdir}/mono/4.8-api/Microsoft.Web.Infrastructure.dll
+%{_libdir}/mono/4.8-api/Mono.C5.dll
+%{_libdir}/mono/4.8-api/Mono.CSharp.dll
+%{_libdir}/mono/4.8-api/Mono.Cairo.dll
+%{_libdir}/mono/4.8-api/Mono.CodeContracts.dll
+%{_libdir}/mono/4.8-api/Mono.CompilerServices.SymbolWriter.dll
+%{_libdir}/mono/4.8-api/Mono.Data.Sqlite.dll
+%{_libdir}/mono/4.8-api/Mono.Data.Tds.dll
+%{_libdir}/mono/4.8-api/Mono.Debugger.Soft.dll
+%{_libdir}/mono/4.8-api/Mono.Http.dll
+%{_libdir}/mono/4.8-api/Mono.Management.dll
+%{_libdir}/mono/4.8-api/Mono.Messaging.RabbitMQ.dll
+%{_libdir}/mono/4.8-api/Mono.Messaging.dll
+%{_libdir}/mono/4.8-api/Mono.Options.dll
+%{_libdir}/mono/4.8-api/Mono.Parallel.dll
+%{_libdir}/mono/4.8-api/Mono.Posix.dll
+%{_libdir}/mono/4.8-api/Mono.Security.Win32.dll
+%{_libdir}/mono/4.8-api/Mono.Security.dll
+%{_libdir}/mono/4.8-api/Mono.Simd.dll
+%{_libdir}/mono/4.8-api/Mono.Tasklets.dll
+%{_libdir}/mono/4.8-api/Mono.WebBrowser.dll
+%{_libdir}/mono/4.8-api/Novell.Directory.Ldap.dll
+%{_libdir}/mono/4.8-api/PEAPI.dll
+%{_libdir}/mono/4.8-api/RabbitMQ.Client.dll
+%{_libdir}/mono/4.8-api/SMDiagnostics.dll
+%{_libdir}/mono/4.8-api/System.ComponentModel.Composition.dll
+%{_libdir}/mono/4.8-api/System.ComponentModel.DataAnnotations.dll
+%{_libdir}/mono/4.8-api/System.Configuration.Install.dll
+%{_libdir}/mono/4.8-api/System.Configuration.dll
+%{_libdir}/mono/4.8-api/System.Core.dll
+%{_libdir}/mono/4.8-api/System.Data.DataSetExtensions.dll
+%{_libdir}/mono/4.8-api/System.Data.Entity.dll
+%{_libdir}/mono/4.8-api/System.Data.Linq.dll
+%{_libdir}/mono/4.8-api/System.Data.OracleClient.dll
+%{_libdir}/mono/4.8-api/System.Data.Services.Client.dll
+%{_libdir}/mono/4.8-api/System.Data.Services.dll
+%{_libdir}/mono/4.8-api/System.Data.dll
+%{_libdir}/mono/4.8-api/System.Deployment.dll
+%{_libdir}/mono/4.8-api/System.Design.dll
+%{_libdir}/mono/4.8-api/System.Diagnostics.Tracing.dll
+%{_libdir}/mono/4.8-api/System.DirectoryServices.Protocols.dll
+%{_libdir}/mono/4.8-api/System.DirectoryServices.dll
+%{_libdir}/mono/4.8-api/System.Drawing.Design.dll
+%{_libdir}/mono/4.8-api/System.Drawing.dll
+%{_libdir}/mono/4.8-api/System.Dynamic.dll
+%{_libdir}/mono/4.8-api/System.EnterpriseServices.dll
+%{_libdir}/mono/4.8-api/System.IO.Compression.FileSystem.dll
+%{_libdir}/mono/4.8-api/System.IO.Compression.dll
+%{_libdir}/mono/4.8-api/System.IdentityModel.Selectors.dll
+%{_libdir}/mono/4.8-api/System.IdentityModel.dll
+%{_libdir}/mono/4.8-api/System.Json.Microsoft.dll
+%{_libdir}/mono/4.8-api/System.Json.dll
+%{_libdir}/mono/4.8-api/System.Management.dll
+%{_libdir}/mono/4.8-api/System.Messaging.dll
+%{_libdir}/mono/4.8-api/System.Net.Http.Formatting.dll
+%{_libdir}/mono/4.8-api/System.Net.Http.WebRequest.dll
+%{_libdir}/mono/4.8-api/System.Net.Http.dll
+%{_libdir}/mono/4.8-api/System.Net.dll
+%{_libdir}/mono/4.8-api/System.Numerics.Vectors.dll
+%{_libdir}/mono/4.8-api/System.Numerics.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Core.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Debugger.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Experimental.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Interfaces.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Linq.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Observable.Aliases.dll
+%{_libdir}/mono/4.8-api/System.Reactive.PlatformServices.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Providers.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Runtime.Remoting.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Windows.Forms.dll
+%{_libdir}/mono/4.8-api/System.Reactive.Windows.Threading.dll
+%{_libdir}/mono/4.8-api/System.Reflection.Context.dll
+%{_libdir}/mono/4.8-api/System.Runtime.Caching.dll
+%{_libdir}/mono/4.8-api/System.Runtime.DurableInstancing.dll
+%{_libdir}/mono/4.8-api/System.Runtime.Remoting.dll
+%{_libdir}/mono/4.8-api/System.Runtime.Serialization.Formatters.Soap.dll
+%{_libdir}/mono/4.8-api/System.Runtime.Serialization.dll
+%{_libdir}/mono/4.8-api/System.Security.dll
+%{_libdir}/mono/4.8-api/System.ServiceModel.Activation.dll
+%{_libdir}/mono/4.8-api/System.ServiceModel.Discovery.dll
+%{_libdir}/mono/4.8-api/System.ServiceModel.Routing.dll
+%{_libdir}/mono/4.8-api/System.ServiceModel.Web.dll
+%{_libdir}/mono/4.8-api/System.ServiceModel.dll
+%{_libdir}/mono/4.8-api/System.ServiceProcess.dll
+%{_libdir}/mono/4.8-api/System.Threading.Tasks.Dataflow.dll
+%{_libdir}/mono/4.8-api/System.Transactions.dll
+%{_libdir}/mono/4.8-api/System.Web.Abstractions.dll
+%{_libdir}/mono/4.8-api/System.Web.ApplicationServices.dll
+%{_libdir}/mono/4.8-api/System.Web.DynamicData.dll
+%{_libdir}/mono/4.8-api/System.Web.Extensions.Design.dll
+%{_libdir}/mono/4.8-api/System.Web.Extensions.dll
+%{_libdir}/mono/4.8-api/System.Web.Http.SelfHost.dll
+%{_libdir}/mono/4.8-api/System.Web.Http.WebHost.dll
+%{_libdir}/mono/4.8-api/System.Web.Http.dll
+%{_libdir}/mono/4.8-api/System.Web.Mobile.dll
+%{_libdir}/mono/4.8-api/System.Web.Mvc.dll
+%{_libdir}/mono/4.8-api/System.Web.Razor.dll
+%{_libdir}/mono/4.8-api/System.Web.RegularExpressions.dll
+%{_libdir}/mono/4.8-api/System.Web.Routing.dll
+%{_libdir}/mono/4.8-api/System.Web.Services.dll
+%{_libdir}/mono/4.8-api/System.Web.WebPages.Deployment.dll
+%{_libdir}/mono/4.8-api/System.Web.WebPages.Razor.dll
+%{_libdir}/mono/4.8-api/System.Web.WebPages.dll
+%{_libdir}/mono/4.8-api/System.Web.dll
+%{_libdir}/mono/4.8-api/System.Windows.Forms.DataVisualization.dll
+%{_libdir}/mono/4.8-api/System.Windows.Forms.dll
+%{_libdir}/mono/4.8-api/System.Windows.dll
+%{_libdir}/mono/4.8-api/System.Workflow.Activities.dll
+%{_libdir}/mono/4.8-api/System.Workflow.ComponentModel.dll
+%{_libdir}/mono/4.8-api/System.Workflow.Runtime.dll
+%{_libdir}/mono/4.8-api/System.Xaml.dll
+%{_libdir}/mono/4.8-api/System.Xml.Linq.dll
+%{_libdir}/mono/4.8-api/System.Xml.Serialization.dll
+%{_libdir}/mono/4.8-api/System.Xml.dll
+%{_libdir}/mono/4.8-api/System.dll
+%{_libdir}/mono/4.8-api/WebMatrix.Data.dll
+%{_libdir}/mono/4.8-api/WindowsBase.dll
+%{_libdir}/mono/4.8-api/cscompmgd.dll
+%{_libdir}/mono/4.8-api/mscorlib.dll
 
 # Should we include all of the I18N's?
 %{_libdir}/mono/gac/I18N/
@@ -1135,6 +1378,7 @@ Mono development tools.
 %{_mandir}/man1/xbuild.1
 %{_libdir}/mono-source-libs/
 %{_libdir}/mono/4.0
+%{_libdir}/mono/4.8-api
 %{_libdir}/mono/4.7.1-api
 %{_libdir}/mono/4.7-api
 %{_libdir}/mono/4.6.2-api
@@ -1178,7 +1422,7 @@ Mono development tools.
 %{_libdir}/mono/4.5/mono-cil-strip.exe*
 %{_libdir}/mono/4.5/mono-shlib-cop.exe*
 %{_libdir}/mono/4.5/mono-xmltool.exe*
-%{_libdir}/mono/4.5/monolinker.*
+#%{_libdir}/mono/4.5/monolinker.exe*
 %{_libdir}/mono/4.5/monop.exe*
 %{_libdir}/mono/4.5/pdb2mdb.exe*
 %{_libdir}/mono/4.5/permview.exe*
@@ -1338,6 +1582,9 @@ not install anything from outside the mono source (XSP, mono-basic, etc.).
 %defattr(-, qsys, *none)
 
 %changelog
+* Mon Dec 23 2019 Calvin Buckley <calvin@cmpct.into> - 6.11.0.137-1qsecofr
+- Update version
+- Tweak package around for readability
 
 * Tue Aug 20 2019 Calvin Buckley <calvin@cmpct.into> - 6.7.0.253-1
 - Update version
