@@ -1,6 +1,6 @@
 Name:           lcms2
 Version:        2.9
-Release:        1qsecofr
+Release:        2qsecofr
 Summary:        Color Management Engine
 License:        MIT
 URL:            http://www.littlecms.com/
@@ -91,6 +91,9 @@ install -D -m 644 doc/LittleCMS2.?\ Plugin\ API.pdf $RPM_BUILD_ROOT/QOpenSys/pkg
 %{_libdir}/pkgconfig/%{name}.pc
 
 %changelog
+* Wed Jan 1 2020 Calvin Buckley <calvin@cmpct.info> - 2.9-2qsecofr
+- Rebuild for IBM packages
+
 * Sat Sep 28 2019 Calvin Buckley <calvin@cmpct.info> - 2.9-1qsecofr
 - Convert to PASE and bump
 
