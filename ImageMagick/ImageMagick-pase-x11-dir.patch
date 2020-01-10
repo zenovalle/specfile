@@ -1,0 +1,10 @@
+--- configure.ac.old	2019-12-31 14:44:08.000000000 +0000
++++ configure.ac	2019-12-31 14:51:00.000000000 +0000
+@@ -1206,6 +1206,7 @@
+ [# Look for the header file in a standard set of common directories.
+ # Check X11 before X11Rn because it is often a symlink to the current release.
+     for ac_dir in          \
++    /QOpenSys/pkgs/share   \
+     /lib/usr/lib/X11       \
+     /usr/X11/lib           \
+     /usr/X11R4/lib         \
