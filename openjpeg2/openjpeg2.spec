@@ -5,7 +5,7 @@
 
 Name:           openjpeg2
 Version:        2.3.1
-Release:        1qsecofr
+Release:        2qsecofr
 Summary:        C-Library for JPEG 2000
 
 # windirent.h is MIT, the rest is BSD
@@ -361,6 +361,9 @@ make test -C %{_target_platform}
 
 
 %changelog
+* Thu Jan 2 2020 Calvin Buckley <calvin@cmpct.info> - 2.3.1-2qsecofr
+- Rebuild against IBM libtiff
+
 * Sat Sep 28 2019 Calvin Buckley <calvin@cmpct.info> - 2.3.1-1qsecofr
 - Convert to PASE
 - Bump
