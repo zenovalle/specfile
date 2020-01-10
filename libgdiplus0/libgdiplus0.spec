@@ -4,8 +4,8 @@
 %define real_name libgdiplus
 
 Name:           libgdiplus0
-Version:        6.0
-Release:        1
+Version:        6.0.2
+Release:        1qsecofr
 License:        LGPL v2.1 only ; MPL ; MIT License (or similar)
 Url:            http://go-mono.org/
 Source0:        http://download.mono-project.com/sources/libgdiplus/%{real_name}-%{version}.tar.gz
@@ -64,6 +64,7 @@ autoreconf -fiv
     --enable-shared --disable-static
 
 %make_build
+gmake check || true
 
 %install
 %make_install
@@ -73,6 +74,9 @@ rm -f %{buildroot}%{_libdir}/libgdiplus.la
 find . -name INSTALL | xargs rm -f
 
 %changelog
+* Wed Jan 1 2020 Calvin Buckley  - 6.0.2-1qsecofr
+- Bump
+- Use IBM tiff/gif
 
 * Sun Aug 04 2019 Calvin Buckley - 6.0-1
 - Bump to latest stable and remove obsoleted patch
