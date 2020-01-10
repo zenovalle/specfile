@@ -3,8 +3,8 @@
 %undefine _disable_source_fetch
 
 Name: R
-Version: 3.6.1
-Release: 8qsecofr
+Version: 3.6.2
+Release: 1qsecofr
 License: GPL-2.0-only
 Summary: R Programming Language
 Url: https://www.r-project.org
@@ -133,6 +133,9 @@ rm %{buildroot}%{_libdir}/charset.alias || :
 
 
 %changelog
+* Wed Jan 1 2020 Calvin Buckley <calvin@cmpct.info> - 3.6.2-1qsecofr
+- Bump to 3.6.2
+- Should be relinked with IBM libtiff
 
 * Wed Sep 4 2019 Calvin Buckley <calvin@cmpct.info> - 3.6.1-8qsecofr
 - Make shared libraries for packages include pthread (unbreaks std::mutex, which some use; a lot of references, but...)
