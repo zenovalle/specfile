@@ -1,0 +1,338 @@
+From b0479012468915cd322d8625f81e3b634439ac52 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 07:51:21 -0500
+Subject: [PATCH 01/11] fix linker flags for AIX
+
+Modern AIX also wants these; matches Bull SPRM for OTP R15
+---
+ erts/configure.in | 8 ++++----
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/erts/configure.in b/erts/configure.in
+index b070ad0649c..e6b2c358d2b 100644
+--- a/erts/configure.in
++++ b/erts/configure.in
+@@ -952,7 +952,7 @@ AC_SUBST(ERLANG_OSTYPE)
+ AC_MSG_CHECKING(for extra flags needed to export symbols)
+ DEXPORT=""
+ case $host_os in
+-	aix4*)
++	aix*|os400*)
+ 		DEXPORT=-Wl,-bexpall,-brtl
+ 	;;
+ 	bsdi*)
+@@ -1384,7 +1384,7 @@ if test "$have_gethostbyname_r" = yes; then
+ 			AC_DEFINE(HAVE_GETHOSTBYNAME_R, GHBN_R_SOLARIS,
+ 				[Define to flavour of gethostbyname_r])
+ 		;;
+-		aix4*)
++		aix*|os400*)
+ 			# AIX version also needs "struct hostent_data" defn
+ 			AC_TRY_COMPILE([#include <netdb.h>],
+ 				[struct hostent_data hd;],
+
+From 58008f8c5d6962b13c744ec411163ed4a94833e1 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 07:56:31 -0500
+Subject: [PATCH 02/11] Fix AIX weirdness woth section attribute by not using
+ it
+
+I suspect XCOFF shenanigans.
+---
+ erts/emulator/beam/sys.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/erts/emulator/beam/sys.h b/erts/emulator/beam/sys.h
+index a6312293cc8..c84c0f68556 100644
+--- a/erts/emulator/beam/sys.h
++++ b/erts/emulator/beam/sys.h
+@@ -164,7 +164,8 @@ typedef ERTS_SYS_FD_TYPE ErtsSysFdType;
+ #  define ERTS_UNLIKELY(BOOL) (BOOL)
+ #endif
+ 
+-#if ERTS_AT_LEAST_GCC_VSN__(2, 96, 0)
++/* AIX doesn't like this and claims section conflicts */
++#if ERTS_AT_LEAST_GCC_VSN__(2, 96, 0) && !defined(_AIX)
+ #if (defined(__APPLE__) && defined(__MACH__)) || defined(__DARWIN__)
+ #  define ERTS_WRITE_UNLIKELY(X) X __attribute__ ((section ("__DATA,ERTS_LOW_WRITE") ))
+ #else
+
+From 91710381b30ac3f933f8d3cd19922e033a7584ad Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 08:01:07 -0500
+Subject: [PATCH 03/11] AIX needs this for mallopt too
+
+---
+ erts/emulator/beam/utils.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/erts/emulator/beam/utils.c b/erts/emulator/beam/utils.c
+index 36cfe0548ee..6f4d4335716 100644
+--- a/erts/emulator/beam/utils.c
++++ b/erts/emulator/beam/utils.c
+@@ -66,7 +66,7 @@
+ #undef M_MMAP_THRESHOLD
+ #undef M_MMAP_MAX
+ 
+-#if defined(__GLIBC__) && defined(HAVE_MALLOC_H)
++#if (defined(__GLIBC__) || defined(_AIX)) && defined(HAVE_MALLOC_H)
+ #include <malloc.h>
+ #endif
+ 
+
+From 1db71906766b529a3a4a9b5f3ba4f398827779d8 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 08:04:16 -0500
+Subject: [PATCH 04/11] MSG_DONTWAIT may not be present on all systems
+
+---
+ erts/emulator/sys/unix/erl_child_setup.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/erts/emulator/sys/unix/erl_child_setup.c b/erts/emulator/sys/unix/erl_child_setup.c
+index 129861ebd50..f3662f94c62 100644
+--- a/erts/emulator/sys/unix/erl_child_setup.c
++++ b/erts/emulator/sys/unix/erl_child_setup.c
+@@ -491,7 +491,12 @@ main(int argc, char *argv[])
+             ErtsSysForkerProto proto;
+             errno = 0;
+             if ((res = sys_uds_read(uds_fd, (char*)&proto, sizeof(proto),
++#if defined(MSG_DONTWAIT)
+                                     pipes, 3, MSG_DONTWAIT)) < 0) {
++#else
++		/* XXX: a workaround here? */
++                                    pipes, 3, 0)) < 0) {
++#endif
+                 if (errno == EINTR)
+                     continue;
+                 DEBUG_PRINT("erl_child_setup failed to read from uds: %d, %d", res, errno);
+
+From 34ef096ba511822dd32a17096872d49106ca172a Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 09:17:16 -0500
+Subject: [PATCH 05/11] vsyslog replacement if not present
+
+---
+ erts/configure.in       |  2 +-
+ erts/etc/unix/run_erl.c | 12 ++++++++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/erts/configure.in b/erts/configure.in
+index e6b2c358d2b..d0f90d2e202 100644
+--- a/erts/configure.in
++++ b/erts/configure.in
+@@ -1993,7 +1993,7 @@ AC_CHECK_FUNCS([ieee_handler fpsetmask finite isnan isinf res_gethostbyname dlop
+ 		gethrtime localtime_r gmtime_r inet_pton mprotect \
+ 		mmap mremap memcpy mallopt sbrk _sbrk __sbrk brk _brk __brk \
+ 		flockfile fstat strlcpy strlcat setsid posix2time time2posix \
+-		setlocale nl_langinfo poll mlockall ppoll])
++		setlocale nl_langinfo poll mlockall ppoll vsyslog])
+ 
+ AC_MSG_CHECKING([for isfinite])
+ AC_TRY_LINK([#include <math.h>],
+diff --git a/erts/etc/unix/run_erl.c b/erts/etc/unix/run_erl.c
+index bfb3e1bd2c3..e9746306958 100644
+--- a/erts/etc/unix/run_erl.c
++++ b/erts/etc/unix/run_erl.c
+@@ -1201,7 +1201,19 @@ static void error_logf(int priority, int line, const char *format, ...)
+ 
+ #ifdef HAVE_SYSLOG_H
+     if (run_daemon) {
++#ifdef HAVE_VSYSLOG
+ 	vsyslog(priority,format,args);
++#else
++	/* Some OSes like AIX lack vsyslog. */
++	va_list ap;
++	char message[900]; /* AIX man page says truncation past this */
++
++	va_start (ap, format);
++	vsnprintf(message, 900, format, ap);
++	va_end(ap);
++
++	syslog(priority, message);
++#endif
+     }
+     else
+ #endif
+
+From 1e26a24d8d6ab0c56230276be4abb7c7d1e6c445 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 10:36:58 -0500
+Subject: [PATCH 06/11] Don't use gethostbyname_r on AIX
+
+Patch adapated from Bull's R15 SRPM.
+---
+ lib/erl_interface/src/connect/ei_resolve.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/lib/erl_interface/src/connect/ei_resolve.c b/lib/erl_interface/src/connect/ei_resolve.c
+index 225fddc7845..5a8ca0c5673 100644
+--- a/lib/erl_interface/src/connect/ei_resolve.c
++++ b/lib/erl_interface/src/connect/ei_resolve.c
+@@ -55,6 +55,16 @@
+ #include "ei_resolve.h"
+ #include "ei_locking.h"
+ 
++/* AIX has a totally different signature (allegedly shared with some other
++ * Unices) that isn't compatible. It turns out that the _r version isn't
++ * thread-safe according to curl - but bizarrely, since AIX 4.3, libc
++ * is thread-safe in a manner that makes the normal gethostbyname OK
++ * for re-entrant use.
++ */
++#ifdef _AIX
++#undef HAVE_GETHOSTBYNAME_R
++#endif
++
+ #ifdef HAVE_GETHOSTBYNAME_R
+ 
+ int ei_init_resolve(void)
+@@ -75,7 +85,7 @@ int ei_init_resolve(void)
+ static ei_mutex_t *ei_gethost_sem = NULL;
+ #endif /* _REENTRANT */
+ static int ei_resolve_initialized = 0;
+-#ifndef __WIN32__
++#if !defined(__WIN32__) && !defined(_AIX)
+ int h_errno;
+ #endif
+ 
+
+From 4e57e78c2ce497adab11106f792f5c95a6a1771d Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Fri, 25 Jan 2019 12:29:05 -0500
+Subject: [PATCH 07/11] AIX formats utsname different for version numbers
+
+---
+ erts/emulator/sys/unix/sys.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/erts/emulator/sys/unix/sys.c b/erts/emulator/sys/unix/sys.c
+index 4823e549eab..78866b356c7 100644
+--- a/erts/emulator/sys/unix/sys.c
++++ b/erts/emulator/sys/unix/sys.c
+@@ -740,10 +740,17 @@ void os_version(int *pMajor, int *pMinor, int *pBuild) {
+ 				 * X.Y or X.Y.Z.  */
+ 
+     (void) uname(&uts);
++#ifdef _AIX
++    /* AIX stores the major in version and minor in release */
++    *pMajor = atoi(uts.version);
++    *pMinor = atoi(uts.release);
++    *pBuild = 0; /* XXX: get oslevel for AIX or TR on i */
++#else
+     release = uts.release;
+     *pMajor = get_number(&release); /* Pointer to major version. */
+     *pMinor = get_number(&release); /* Pointer to minor version. */
+     *pBuild = get_number(&release); /* Pointer to build number. */
++#endif
+ }
+ 
+ void erts_do_break_handling(void)
+
+From 79e7c4b42e8e31b0ac145a2034266d8bc8f599e9 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Sat, 26 Jan 2019 12:31:50 -0500
+Subject: [PATCH 08/11] Try to use NONBLOCK for erl_child_setup
+
+---
+ erts/emulator/sys/unix/erl_child_setup.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/erts/emulator/sys/unix/erl_child_setup.c b/erts/emulator/sys/unix/erl_child_setup.c
+index f3662f94c62..9241660069a 100644
+--- a/erts/emulator/sys/unix/erl_child_setup.c
++++ b/erts/emulator/sys/unix/erl_child_setup.c
+@@ -75,6 +75,10 @@
+ #define SHELL "/bin/sh"
+ #endif /* __ANDROID__ */
+ 
++#if !defined(MSG_DONTWAIT) && defined(MSG_NONBLOCK)
++#define MSG_DONTWAIT MSG_NONBLOCK
++#endif
++
+ //#define HARD_DEBUG
+ #ifdef HARD_DEBUG
+ #define DEBUG_PRINT(fmt, ...) fprintf(stderr, "%d:" fmt "\r\n", getpid(), ##__VA_ARGS__)
+@@ -491,12 +495,7 @@ main(int argc, char *argv[])
+             ErtsSysForkerProto proto;
+             errno = 0;
+             if ((res = sys_uds_read(uds_fd, (char*)&proto, sizeof(proto),
+-#if defined(MSG_DONTWAIT)
+                                     pipes, 3, MSG_DONTWAIT)) < 0) {
+-#else
+-		/* XXX: a workaround here? */
+-                                    pipes, 3, 0)) < 0) {
+-#endif
+                 if (errno == EINTR)
+                     continue;
+                 DEBUG_PRINT("erl_child_setup failed to read from uds: %d, %d", res, errno);
+
+From 61e76116638a2794a18122fae49774570fded249 Mon Sep 17 00:00:00 2001
+From: Calvin Buckley <calvin@cmpct.info>
+Date: Sat, 26 Jan 2019 12:40:22 -0500
+Subject: [PATCH 09/11] Set preprocessor flags required for AIX and PASE
+
+---
+ erts/configure.in | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/erts/configure.in b/erts/configure.in
+index d0f90d2e202..9fd57f1ff8f 100644
+--- a/erts/configure.in
++++ b/erts/configure.in
+@@ -447,6 +447,12 @@ dnl ---------------------------------------------------------------------
+ dnl NOTE: CPPFLAGS will be included in CFLAGS at the end
+ case $host_os in
+     linux*) CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE";; 
++    aix*|os400*)
++        # * _ALL_SOURCE: Required to get the winsize structure for TIOCSWINSZ.
++        # * _LINUX_SOURCE_COMPAT: Not required, but makes some libc functions
++        # behave closer to glibc assumptions.
++        CPPFLAGS="$CPPFLAGS -D_ALL_SOURCE -D_LINUX_SOURCE_COMPAT"
++        ;;
+     win32)
+ 	# The ethread library requires _WIN32_WINNT of at least 0x0403.
+ 	# -D_WIN32_WINNT=* from CPPFLAGS is saved in ETHR_DEFS.
+
+From bf748c266699792d049edbe79f9a3969681313df Mon Sep 17 00:00:00 2001
+From: Calvin <calvin@cmpct.info>
+Date: Thu, 21 Mar 2019 08:29:08 -0400
+Subject: [PATCH 11/11] fix names conflicting with AIX system names
+
+quick and dirty renaming. the reason why is because AIX has some
+network function names prefixed with "n" for spec compliant
+versions, and the unprefixed versions are just redfined or are
+wrappers. as such, rename the erts/ei functions with these names.
+
+fixes compile on IBM i 7.3
+---
+ lib/erl_interface/include/ei.h         |  2 +-
+ lib/erl_interface/src/misc/ei_portio.c |  2 +-
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/erl_interface/include/ei.h b/lib/erl_interface/include/ei.h
+index aa2a49098fb..949fc4df51b 100644
+--- a/lib/erl_interface/include/ei.h
++++ b/lib/erl_interface/include/ei.h
+@@ -318,7 +318,7 @@ typedef struct {
+     int (*socket)(void **ctx, void *setup_ctx);
+     int	(*close)(void *ctx);
+     int (*listen)(void *ctx, void *addr, int *len, int backlog);
+-    int (*accept)(void **ctx, void *addr, int *len, unsigned tmo);
++    int (*accept_ei)(void **ctx, void *addr, int *len, unsigned tmo);
+     int (*connect)(void *ctx, void *addr, int len, unsigned tmo);
+     int (*writev)(void *ctx, const void *iov, int iovcnt, ssize_t *len, unsigned tmo);
+     int (*write)(void *ctx, const char *buf, ssize_t *len, unsigned tmo);
+diff --git a/lib/erl_interface/src/misc/ei_portio.c b/lib/erl_interface/src/misc/ei_portio.c
+index bccc86c1b11..caa3d270a8b 100644
+--- a/lib/erl_interface/src/misc/ei_portio.c
++++ b/lib/erl_interface/src/misc/ei_portio.c
+@@ -622,7 +622,7 @@ int ei_accept_ctx_t__(ei_socket_callbacks *cbs, void **ctx,
+         } while (error == EINTR);
+     }
+     do {
+-        error = cbs->accept(ctx, addr, len, ms);
++        error = cbs->accept_ei(ctx, addr, len, ms);
+     } while (error == EINTR);
+     return error;
+ }
+

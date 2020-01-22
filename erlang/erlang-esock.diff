@@ -1,0 +1,34 @@
+diff --git a/erts/emulator/nifs/common/socket_nif.c b/erts/emulator/nifs/common/socket_nif.c
+index 84b0725..cca375d 100644
+--- a/erts/emulator/nifs/common/socket_nif.c
++++ b/erts/emulator/nifs/common/socket_nif.c
+@@ -10178,8 +10178,12 @@ ERL_NIF_TERM esock_setopt_lvl_ipv6_addrform(ErlNifEnv*       env,
+                    domain) );
+     
+     res = socket_setopt(descP->sock,
+-                        SOL_IPV6, IPV6_ADDRFORM,
+-                        &domain, sizeof(domain));
++#if defined(SOL_IPV6)
++                        SOL_IPV6,
++#else
++                        IPPROTO_IPV6,
++#endif
++                        IPV6_ADDRFORM, &domain, sizeof(domain));
+ 
+     if (res != 0)
+         result = esock_make_error_errno(env, sock_errno());
+@@ -10209,7 +10213,13 @@ ERL_NIF_TERM esock_setopt_lvl_ipv6_authhdr(ErlNifEnv*       env,
+                                            ESockDescriptor* descP,
+                                            ERL_NIF_TERM     eVal)
+ {
+-    return esock_setopt_bool_opt(env, descP, SOL_IPV6, IPV6_AUTHHDR, eVal);
++    return esock_setopt_bool_opt(env, descP,
++#if defined(SOL_IPV6)
++                        SOL_IPV6,
++#else
++                        IPPROTO_IPV6,
++#endif
++                        IPV6_AUTHHDR, eVal);
+ }
+ #endif
+ 

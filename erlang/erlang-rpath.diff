@@ -1,0 +1,22 @@
+--- otp_src_22.2.old/erts/aclocal.m4	2020-01-21 23:51:25.000000000 +0000
++++ otp_src_22.2/erts/aclocal.m4	2020-01-21 23:53:55.000000000 +0000
+@@ -2988,7 +2988,7 @@
+ 		fi
+ 	;;
+ 	aix*|os400*)
+-		DED_LDFLAGS="-G -bnoentry -bexpall"
++		DED_LDFLAGS="-G -bnoentry -bexpall -bnoquiet -blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib"
+ 	;;
+ 	freebsd2*)
+ 		# Non-ELF GNU linker
+--- otp_src_22.2.old/erts/configure.in	2020-01-21 23:51:25.000000000 +0000
++++ otp_src_22.2/erts/configure.in	2020-01-21 23:54:26.000000000 +0000
+@@ -973,7 +973,7 @@
+ DEXPORT=""
+ case $host_os in
+ 	aix*|os400*)
+-		DEXPORT=-Wl,-bexpall,-brtl
++		DEXPORT="-Wl,-bexpall,-brtl,-bnoquiet,-blibpath:/QOpenSys/pkgs/lib:/QOpenSys/usr/lib"
+ 	;;
+ 	bsdi*)
+     		DEXPORT="-rdynamic " 
