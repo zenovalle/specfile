@@ -1,6 +1,6 @@
 Name: erlang
 Version: 22.2
-Release: 1
+Release: 1qsecofr
 Summary: General-purpose programming language and runtime environment
 License: Apache-2.0
 Group: Development/Languages
@@ -167,7 +167,7 @@ tar -C ${RPM_BUILD_ROOT}%{_libdir}/erlang -zxf %{SOURCE2}
 #%{_libdir}/erlang/Install -minimal %{_libdir}/erlang &>/dev/null
 
 %changelog
-* Tue Jan 21 2020 Calvin Buckley <calvin@cmpct.info> 22.2
+* Tue Jan 21 2020 Calvin Buckley <calvin@cmpct.info> 22.2-1qsecofr
 - Update to OTP 22.2
 
 * Sat Mar 30 2019 Calvin Buckley <calvin@cmpct.info> 22.0-rc1
