@@ -19,15 +19,13 @@
 
 Name:           xsp
 Url:            http://go-mono.com/
-Version:	4.5
+Version:	4.7.1
 Release:	1qsecofr
 Summary:        Small Web Server Hosting ASP.NET
 License:        MIT
 Group:          Productivity/Networking/Web/Servers
 Source:         https://download.mono-project.com/sources/xsp/%{name}-%{version}.tar.gz
 Source1:        xsp.conf
-Source2:        dbpage_test_setup.cs
-Patch0:         xsp-fixes.patch
 
 Requires: mono-web
 #BuildRequires:  fdupes
@@ -38,7 +36,8 @@ BuildRequires:  mono-devel
 BuildRequires:  mono-web
 #BuildRequires:  monodoc-core
 BuildRequires:  pkg-config
-#BuildRequires:  sqlite
+# Workaround for dllmap bug, ugh
+BuildRequires:  sqlite3-devel
 %define xspConfigsLocation %{_sysconfdir}/xsp/4.0
 %define xspAvailableApps %{xspConfigsLocation}/applications-available
 %define xspEnabledApps %{xspConfigsLocation}/applications-enabled
@@ -51,9 +50,6 @@ classes for running what is commonly known as ASP.NET.
 
 %prep
 %setup -q
-%patch0 -p1
-# XXX: Looks like the XSP dist is messed up
-cp %{SOURCE2} test/1.1/webcontrols/dbpage_test_setup.cs
 
 %build
 
@@ -64,11 +60,11 @@ autoreconf -fiv -Ibuild/m4 -Ibuild/m4/shamrock -Ibuild/m4/shave .
   --with-aix-soname=svr4 \
   --enable-shared --disable-static \
   --disable-docs
-%make_build
+%make_build V=1
 
 %install
 
-%make_install
+%make_install V=1
 rm -f %{buildroot}%{_prefix}/lib/libfpm_helper.a
 rm -f %{buildroot}%{_prefix}/lib/libfpm_helper.la
 rm -f %{buildroot}%{_prefix}/lib/libfpm_helper.so
@@ -111,9 +107,8 @@ install -d -m 0711 --owner=wwwrun --group=www /run/xsp4
 %files
 %defattr(-, qsys, *none)
 %{_bindir}/*
-# there's two, don't question it
 %{_libdir}/pkgconfig/*
-%{_datadir}/pkgconfig/*
+#%{_datadir}/pkgconfig/*
 %{_prefix}/lib/mono/4.5/Mono.WebServer2.dll
 %{_prefix}/lib/mono/4.5/fastcgi-mono-server4.exe
 %{_prefix}/lib/mono/4.5/mod-mono-server4.exe
@@ -152,6 +147,10 @@ install -d -m 0711 --owner=wwwrun --group=www /run/xsp4
 %endif
 
 %changelog
+* Tue Jan 21 2020 Calvin Buckley <calvin@cmpct.info> - 4.7.1-1qsecofr
+- Bump
+- Patches upstreamed
+
 * Sat Aug 31 2019 Calvin Buckley <calvin@cmpct.info> - 4.5-1qsecofr
 - PASE conversion
 - Patches
