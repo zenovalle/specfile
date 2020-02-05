@@ -2,12 +2,12 @@
 #%{!?dotests: %define dotests 1}
 
 %global VERSION  7.0.9
-%global Patchlevel  13
+%global Patchlevel  20
 
 
 Name:           ImageMagick
 Version:        %{VERSION}.%{Patchlevel}
-Release:        2qsecofr
+Release:        1qsecofr
 Summary:        Viewer and Converter for Images
 Group:          Applications/Multimedia
 License:        https://imagemagick.org/script/license.php
@@ -29,7 +29,8 @@ BuildRequires:  libpng-devel
 # Realize I'm going to have to rebuild this once OpenJPEG2 gets rebuilt because of any future CMake changes...
 BuildRequires:  lcms2-devel, pango-devel, fontconfig-devel, xz-devel, openjpeg2-devel, libtool
 BuildRequires:  autoconf automake libtool
-BuildRequires:  coreutils-gnu gcc-cplusplus-aix libstdcplusplus-devel libgomp-devel
+BuildRequires:  coreutils-gnu gcc-cplusplus-aix libstdcplusplus-devel
+#BuildRequires: libgomp-devel
 BuildRequires:  libICE-devel, libXext-devel, libXt-devel, rgb
 # XXX: Likely undetermined deps on tcl/tk/X.org
 
@@ -158,6 +159,8 @@ cp -p Magick++/demo/*.cpp Magick++/demo/*.miff Magick++/examples
 #export LDFLAGS="-L/opt/freeware/lib64 -L/opt/freeware/lib -L/usr/lib -Wl,-blibpath:/opt/freeware/lib/pthread/ppc64:/opt/freeware/lib64:/opt/freeware/lib:/usr/lib:/lib"
 
 autoreconf -fiv .
+# openmp hangs reported, don't do it
+# https://github.com/Imagick/imagick#openmp
 %configure \
         --enable-shared \
         --disable-static \
@@ -172,6 +175,7 @@ autoreconf -fiv .
         --with-pango=yes \
         --with-fontconfig=yes \
         --with-openjp2=yes \
+        --disable-openmp \
         --with-aix-soname=svr4
 
 #        --with-jbig
@@ -252,6 +256,10 @@ rm %{buildroot}%{_libdir}/*.la
 %{_mandir}/man1/Magick++-config.*
 
 %changelog
+* Thu Jan 30 2020 Calvin Buckley <calvin@cmpct.info> - 7.0.9.20-1qsecofr
+- Bump
+- Disable OpenMP
+
 * Thu Jan 1 2020 Calvin Buckley <calvin@cmpct.info> - 7.0.9.13-2qsecofr
 - Enable some desirable stuff
 
