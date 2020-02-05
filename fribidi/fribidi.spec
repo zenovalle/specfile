@@ -1,7 +1,7 @@
 Summary: Library implementing the Unicode Bidirectional Algorithm
 Name: fribidi
-Version: 1.0.5
-Release: 1
+Version: 1.0.8
+Release: 1qsecofr
 URL: https://github.com/fribidi/fribidi
 Source0: https://github.com/fribidi/fribidi/releases/download/v%{version}/%{name}-%{version}.tar.bz2
 License: LGPLv2+
@@ -62,6 +62,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_mandir}/man3/*
 
 %changelog
+* Wed Feb 05 2020 Calvin Buckey <calvin@cmpct.info> - 1.0.8-1qsecofr
+- Bump
+
 * Mon Aug 05 2019 Calvin Buckley <calvin@cmpct.info> - 1.0.5-1
 - Bump
 - PASE
