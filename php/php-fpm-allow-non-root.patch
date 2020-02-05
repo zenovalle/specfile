@@ -1,0 +1,18 @@
+diff --git a/sapi/fpm/fpm/fpm_unix.c b/sapi/fpm/fpm/fpm_unix.c
+index 6490a7b5ba..f1ecc6f15d 100644
+--- a/sapi/fpm/fpm/fpm_unix.c
++++ b/sapi/fpm/fpm/fpm_unix.c
+@@ -255,7 +255,13 @@ int fpm_unix_free_socket_premissions(struct fpm_worker_pool_s *wp) /* {{{ */
+ static int fpm_unix_conf_wp(struct fpm_worker_pool_s *wp) /* {{{ */
+ {
+ 	struct passwd *pwd;
++#ifndef __PASE__
+ 	int is_root = !geteuid();
++#else
++	// TODO: check if user has *ALLOBJ and *JOBCTL here
++	// for now assume true
++	int is_root = 1;
++#endif
+ 
+ 	if (is_root) {
+ 		if (wp->config->user && *wp->config->user) {

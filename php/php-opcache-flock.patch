@@ -1,0 +1,23 @@
+commit c2a9f1a450ff2e9b5290996eae88aad6704bc455
+Author: Kevin Adler <kadler@us.ibm.com>
+Date:   Wed Jul 17 12:46:44 2019 -0500
+
+    WIP: Try to use php flock implementation if flock not available
+    
+    flock is in libbsd on AIX/PASE, but linking with both libbsd and libc
+    causes issues when using time-related APIs like localtime, etc. Instead,
+    let opcache use the php_flock implementation when flock is not available.
+
+diff --git a/ext/opcache/zend_file_cache.c b/ext/opcache/zend_file_cache.c
+index c68163ef7f..3524fd9177 100644
+--- a/ext/opcache/zend_file_cache.c
++++ b/ext/opcache/zend_file_cache.c
+@@ -86,6 +86,8 @@ static int zend_file_cache_flock(int fd, int op)
+ }
+ #elif defined(HAVE_FLOCK)
+ # define zend_file_cache_flock flock
++#elif defined(HAVE_STRUCT_FLOCK)
++# define zend_file_cache_flock php_flock
+ #else
+ # define LOCK_SH 0
+ # define LOCK_EX 1

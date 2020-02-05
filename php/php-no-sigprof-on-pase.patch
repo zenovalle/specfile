@@ -1,0 +1,22 @@
+commit 570ad4848ee947fe01834049eb610613921a95cb
+Author: Kevin Adler <kadler@us.ibm.com>
+Date:   Wed Jun 19 13:35:22 2019 -0500
+
+    Use SIGALRM/ITMER_REAL for set_timeout on PASE
+    
+    PASE only supports realmode clock/timers, so we can't use
+    SIGPROF/ITIMER_PROF.
+
+diff --git a/Zend/zend_execute_API.c b/Zend/zend_execute_API.c
+index a551449e79..149a535a97 100644
+--- a/Zend/zend_execute_API.c
++++ b/Zend/zend_execute_API.c
+@@ -1218,7 +1218,7 @@ static void zend_set_timeout_ex(zend_long seconds, int reset_signals) /* {{{ */
+ 			t_r.it_value.tv_sec = seconds;
+ 			t_r.it_value.tv_usec = t_r.it_interval.tv_sec = t_r.it_interval.tv_usec = 0;
+ 
+-#	ifdef __CYGWIN__
++#	if defined(__CYGWIN__) || defined(__PASE__)
+ 			setitimer(ITIMER_REAL, &t_r, NULL);
+ 		}
+ 		signo = SIGALRM;

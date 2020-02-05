@@ -1,0 +1,188 @@
+diff --git a/php.ini-production b/php.ini-production
+index 656ae67302..a6b0029547 100644
+--- a/php.ini-production
++++ b/php.ini-production
+@@ -902,49 +902,11 @@ default_socket_timeout = 60
+ ; 'extension='php_<ext>.dll') is supported for legacy reasons and may be
+ ; deprecated in a future PHP major version. So, when it is possible, please
+ ; move to the new ('extension=<ext>) syntax.
+-;
+-; Notes for Windows environments :
+-;
+-; - Many DLL files are located in the extensions/ (PHP 4) or ext/ (PHP 5+)
+-;   extension folders as well as the separate PECL DLL download (PHP 5+).
+-;   Be sure to appropriately set the extension_dir directive.
+-;
+-;extension=bz2
+-;extension=curl
+-;extension=fileinfo
+-;extension=gd2
+-;extension=gettext
+-;extension=gmp
+-;extension=intl
+-;extension=imap
+-;extension=interbase
+-;extension=ldap
+-;extension=mbstring
+-;extension=exif      ; Must be after mbstring as it depends on it
+-;extension=mysqli
+-;extension=oci8_12c  ; Use with Oracle Database 12c Instant Client
+-;extension=odbc
+-;extension=openssl
+-;extension=pdo_firebird
+-;extension=pdo_mysql
+-;extension=pdo_oci
+-;extension=pdo_odbc
+-;extension=pdo_pgsql
+-;extension=pdo_sqlite
+-;extension=pgsql
+-;extension=shmop
+-
+-; The MIBS data available in the PHP distribution must be installed.
+-; See http://www.php.net/manual/en/snmp.installation.php
+-;extension=snmp
+-
+-;extension=soap
+-;extension=sockets
+-;extension=sodium
+-;extension=sqlite3
+-;extension=tidy
+-;extension=xmlrpc
+-;extension=xsl
++
++;;;;
++; Note: packaged extension modules are now loaded via the .ini files
++; found in the directory @EXTENSION_DIR@; these are loaded by default.
++;;;;
+ 
+ ;;;;;;;;;;;;;;;;;;;
+ ; Module Settings ;
+@@ -1063,16 +1025,6 @@ pdo_mysql.default_socket=
+ ;phar.cache_list =
+ 
+ [mail function]
+-; For Win32 only.
+-; http://php.net/smtp
+-SMTP = localhost
+-; http://php.net/smtp-port
+-smtp_port = 25
+-
+-; For Win32 only.
+-; http://php.net/sendmail-from
+-;sendmail_from = me@example.com
+-
+ ; For Unix only.  You may supply arguments as well (default: "sendmail -t -i").
+ ; http://php.net/sendmail-path
+ ;sendmail_path =
+@@ -1246,59 +1198,6 @@ mysqlnd.collect_memory_statistics = Off
+ ; key.
+ ;mysqlnd.sha256_server_public_key =
+ 
+-[OCI8]
+-
+-; Connection: Enables privileged connections using external
+-; credentials (OCI_SYSOPER, OCI_SYSDBA)
+-; http://php.net/oci8.privileged-connect
+-;oci8.privileged_connect = Off
+-
+-; Connection: The maximum number of persistent OCI8 connections per
+-; process. Using -1 means no limit.
+-; http://php.net/oci8.max-persistent
+-;oci8.max_persistent = -1
+-
+-; Connection: The maximum number of seconds a process is allowed to
+-; maintain an idle persistent connection. Using -1 means idle
+-; persistent connections will be maintained forever.
+-; http://php.net/oci8.persistent-timeout
+-;oci8.persistent_timeout = -1
+-
+-; Connection: The number of seconds that must pass before issuing a
+-; ping during oci_pconnect() to check the connection validity. When
+-; set to 0, each oci_pconnect() will cause a ping. Using -1 disables
+-; pings completely.
+-; http://php.net/oci8.ping-interval
+-;oci8.ping_interval = 60
+-
+-; Connection: Set this to a user chosen connection class to be used
+-; for all pooled server requests with Oracle 11g Database Resident
+-; Connection Pooling (DRCP).  To use DRCP, this value should be set to
+-; the same string for all web servers running the same application,
+-; the database pool must be configured, and the connection string must
+-; specify to use a pooled server.
+-;oci8.connection_class =
+-
+-; High Availability: Using On lets PHP receive Fast Application
+-; Notification (FAN) events generated when a database node fails. The
+-; database must also be configured to post FAN events.
+-;oci8.events = Off
+-
+-; Tuning: This option enables statement caching, and specifies how
+-; many statements to cache. Using 0 disables statement caching.
+-; http://php.net/oci8.statement-cache-size
+-;oci8.statement_cache_size = 20
+-
+-; Tuning: Enables statement prefetching and sets the default number of
+-; rows that will be fetched automatically after statement execution.
+-; http://php.net/oci8.default-prefetch
+-;oci8.default_prefetch = 100
+-
+-; Compatibility. Using On means oci_close() will not close
+-; oci_connect() and oci_new_connect() connections.
+-; http://php.net/oci8.old-oci-close-semantics
+-;oci8.old_oci_close_semantics = Off
+-
+ [PostgreSQL]
+ ; Allow or prevent persistent links.
+ ; http://php.net/pgsql.allow-persistent
+@@ -1368,6 +1267,9 @@ session.save_handler = files
+ ; where MODE is the octal representation of the mode. Note that this
+ ; does not overwrite the process's umask.
+ ; http://php.net/session.save-path
++
++; RPM note : session directory must be owned by process owner
++; for php-fpm, see @SYSCONF_DIR@/php-fpm.d/*conf
+ ;session.save_path = "/tmp"
+ 
+ ; Whether to use strict session mode.
+@@ -1625,31 +1527,6 @@ zend.assertions = -1
+ ; http://php.net/assert.quiet-eval
+ ;assert.quiet_eval = 0
+ 
+-[COM]
+-; path to a file containing GUIDs, IIDs or filenames of files with TypeLibs
+-; http://php.net/com.typelib-file
+-;com.typelib_file =
+-
+-; allow Distributed-COM calls
+-; http://php.net/com.allow-dcom
+-;com.allow_dcom = true
+-
+-; autoregister constants of a component's typlib on com_load()
+-; http://php.net/com.autoregister-typelib
+-;com.autoregister_typelib = true
+-
+-; register constants casesensitive
+-; http://php.net/com.autoregister-casesensitive
+-;com.autoregister_casesensitive = false
+-
+-; show warnings on duplicate constant registrations
+-; http://php.net/com.autoregister-verbose
+-;com.autoregister_verbose = true
+-
+-; The default character set code-page to use when passing strings to and from COM objects.
+-; Default: system ANSI code page
+-;com.code_page=
+-
+ [mbstring]
+ ; language for internal character representation.
+ ; This affects mb_send_mail() and mbstring.detect_order.
+@@ -1773,6 +1650,9 @@ soap.wsdl_cache_enabled=1
+ 
+ ; Sets the directory name where SOAP extension will put cache files.
+ ; http://php.net/soap.wsdl-cache-dir
++
++; RPM note : cache directory must be owned by process owner
++; for php-fpm, see @SYSCONF_DIR@/php-fpm.d/*conf
+ soap.wsdl_cache_dir="/tmp"
+ 
+ ; (time to live) Sets the number of second while cached file will be used
