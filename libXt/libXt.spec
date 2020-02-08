@@ -1,12 +1,13 @@
 Name:          libXt
 Version:       1.2.0
-Release:       1
+Release:       2qsecofr
 Summary:       X Toolkit Intrinsics library
 Group:         System/Libraries
 URL:           http://xorg.freedesktop.org
 Source:        http://xorg.freedesktop.org/releases/individual/lib/%{name}-%{version}.tar.bz2
 License:       MIT
 BuildRequires: automake, autoconf
+BuildRequires: libxslt
 BuildRequires: glib2-devel
 BuildRequires: libICE-devel
 BuildRequires: libSM-devel
@@ -25,6 +26,7 @@ X.Org Xt library.
 Summary:       Development files for the X Toolkit Intrinsics library
 Group:         Development/Libraries
 Requires:      %{name} = %{?epoch:%epoch:}%{version}-%{release}
+Requires:      libICE-devel, libSM-devel
 #Requires:       %lname = %version
 Obsoletes:     libXorg-devel
 
@@ -37,7 +39,6 @@ This package contains static libraries and header files need for development.
 %setup -q
 
 %build
-#export DED_LD="ld -G -bnoentry -bexpall -b64"
 
 export CONFIG_SHELL=/QOpenSys/pkgs/bin/bash
 export CONFIG_ENV_ARGS=/QOpenSys/pkgs/bin/bash
@@ -71,6 +72,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_datadir}/doc/libXt/*.xml
 
 %changelog
+* Wed Feb 05 2020 Calvin Buckley <calvin@cmpct.info> - 1.2.0-2qsecofr
+- Make devel depend on ICE and SM due to the pkg-config files declaring it
+
 * Sun Aug 04 2019 Calvin Buckley <calvin@cmpct.info> - 1.2.0-1
 - Bump
 - PASE
