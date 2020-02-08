@@ -1,6 +1,6 @@
 Name:          libX11
-Version:       1.6.8
-Release:       1
+Version:       1.6.9
+Release:       1qsecofr
 Summary:       X.Org X11 library
 Group:		System/Libraries
 URL:		http://www.x.org
@@ -89,7 +89,7 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 %{_prefix}/share/X11/Xcms.txt
 %{_libdir}/libX11*.so
 
-%{_includedir}/X11/*.h
+%{_includedir}/X11/*
 
 %{_libdir}/pkgconfig/*.pc
 
@@ -101,6 +101,9 @@ find %{buildroot}/%{_libdir} -name \*.la | xargs rm
 
 
 %changelog
+* Wed Feb 05 2020 Calvin Buckley <calvin@cmpct.info> - 1.6.9-1qsecofr
+- Bump
+
 * Mon Jul 29 2019 Calvin Buckley <calvin@cmpct.info> - 1.6.8-1
 - PASE
 - Bump
