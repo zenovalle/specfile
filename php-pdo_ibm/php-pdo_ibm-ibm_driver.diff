@@ -1,0 +1,15 @@
+diff --git a/ibm_driver.c b/ibm_driver.c
+index c6188bf..b2ade62 100644
+--- a/ibm_driver.c
++++ b/ibm_driver.c
+@@ -33,6 +33,10 @@
+ #include "zend_exceptions.h"
+ #include <stdio.h>
+ 
++#ifdef PASE
++#include "sqlca.h"                     /* Required include file */
++#endif
++
+ extern struct pdo_stmt_methods ibm_stmt_methods;
+ extern int ibm_stmt_dtor(pdo_stmt_t *stmt TSRMLS_DC);
+ 

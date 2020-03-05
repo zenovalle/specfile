@@ -1,0 +1,101 @@
+diff --git a/config.m4 b/config.m4
+index 5eef1ab..09121b3 100755
+--- a/config.m4
++++ b/config.m4
+@@ -13,7 +13,7 @@ if test "$PHP_PDO_IBM" != "no"; then
+   for i in $SEARCH_PATH ; do
+     AC_MSG_CHECKING([     in $i])
+     if test -r $i/libdb2.so || test -r $i/libdb2.a || test -r $i/libdb400.a || test -r $i/libdb2.dylib; then
+-      LIB_DIR="$i/"
++      LIB_DIR="$i"
+       AC_MSG_RESULT(found)
+       break
+     else
+@@ -21,7 +21,7 @@ if test "$PHP_PDO_IBM" != "no"; then
+     fi
+     AC_MSG_CHECKING([     in $i/lib64])
+     if test -r $i/lib64/libdb2.so || test -r $i/lib64/libdb2.a || test -r $i/lib64/libdb400.a || test -r $i/lib64/libdb2.dylib ; then
+-      LIB_DIR="$i/lib64/"
++      LIB_DIR="$i/lib64"
+       AC_MSG_RESULT(found)
+       break
+     else
+@@ -29,7 +29,7 @@ if test "$PHP_PDO_IBM" != "no"; then
+     fi
+     AC_MSG_CHECKING([     in $i/lib32])
+     if test -r $i/lib32/libdb2.so || test -r $i/lib32/libdb2.a || test -r $i/lib32/libdb400.a || test -r $i/lib32/libdb2.dylib ; then
+-      LIB_DIR="$i/lib32/"
++      LIB_DIR="$i/lib32"
+       AC_MSG_RESULT(found)
+       break
+     else
+@@ -37,7 +37,7 @@ if test "$PHP_PDO_IBM" != "no"; then
+     fi
+     AC_MSG_CHECKING([     in $i/lib])
+     if test -r $i/lib/libdb2.so || test -r $i/lib/libdb2.a || test -r $i/lib/libdb400.a || test -r $i/lib/libdb2.dylib ; then
+-      LIB_DIR="$i/lib/"
++      LIB_DIR="$i/lib"
+       AC_MSG_RESULT(found)
+       break
+     else
+@@ -46,14 +46,27 @@ if test "$PHP_PDO_IBM" != "no"; then
+   done
+ 
+   AC_MSG_CHECKING([for DB2 CLI include files in default path])
+-  for i in $SEARCH_PATH ; do
+-    AC_MSG_CHECKING([in $i])
+-    if test -r "$i/include/sqlcli1.h" ; then
+-      PDO_IBM_DIR=$i
+-      AC_MSG_RESULT(found in $i)
+-      break
+-    fi
+-  done
++  if test -r $LIB_DIR/libdb400.a ; then
++   LIBNAME=db400
++   for i in $SEARCH_PATH ; do
++      AC_MSG_CHECKING([      in $i/include/cli])
++      if test -r "$i/include/cli/sqlcli1.h" ; then
++        PDO_IBM_DIR="$i/include/cli"
++        AC_MSG_RESULT(found)
++        break
++      fi
++    done
++  else
++    LIBNAME=db2
++    for i in $SEARCH_PATH ; do
++      AC_MSG_CHECKING([      in $i/include])
++      if test -r "$i/include/sqlcli1.h" ; then
++        PDO_IBM_DIR="$i/include"
++        AC_MSG_RESULT(found)
++        break
++      fi
++    done
++  fi
+ 
+   AC_MSG_CHECKING([for PDO includes])
+   if test -f $abs_srcdir/include/php/ext/pdo/php_pdo_driver.h; then
+@@ -70,16 +83,19 @@ if test "$PHP_PDO_IBM" != "no"; then
+   dnl Don't forget to add additional source files here
+   php_pdo_ibm_sources_core="pdo_ibm.c ibm_driver.c ibm_statement.c"
+ 
+-  PHP_ADD_INCLUDE($PDO_IBM_DIR/include)
+-  PHP_ADD_LIBPATH($LIB_DIR, PDO_IBM_SHARED_LIBADD)
+-  PHP_ADD_LIBRARY(db2, 1, PDO_IBM_SHARED_LIBADD)
+-
++  PHP_ADD_INCLUDE($PDO_IBM_DIR)
++  PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $LIB_DIR , PDO_IBM_SHARED_LIBADD)
++  
+   case "$host_alias" in
+     *aix*)
+       CPPFLAGS="$CPPFLAGS -D__H_LOCALEDEF";;
+   esac
+ 
+-  PHP_NEW_EXTENSION(pdo_ibm, $php_pdo_ibm_sources_core, $ext_shared,,-I$pdo_inc_path)
++  if test -r $LIB_DIR/libdb400.a ; then
++    PHP_NEW_EXTENSION(pdo_ibm, $php_pdo_ibm_sources_core, $ext_shared,,-I$pdo_inc_path,,-DPASE)
++  else
++    PHP_NEW_EXTENSION(pdo_ibm, $php_pdo_ibm_sources_core, $ext_shared,,-I$pdo_inc_path)
++  fi
+ 
+   ifdef([PHP_ADD_EXTENSION_DEP],
+   [

@@ -1,0 +1,221 @@
+diff --git a/ibm_statement.c b/ibm_statement.c
+index 2772309..1361bf7 100644
+--- a/ibm_statement.c
++++ b/ibm_statement.c
+@@ -154,9 +154,10 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
+ #ifdef PASE /* i5/OS incompatible v6r1 change */
+ 		case SQL_VARBINARY_V6:
+ 		case SQL_BINARY_V6:
+-#endif /* PASE */
++#else
+ 		case SQL_VARBINARY:
+ 		case SQL_BINARY:
++#endif /* PASE */
+ 		case SQL_BLOB:
+ #ifndef PASE
+ 		case SQL_CLOB:
+@@ -362,14 +363,15 @@ static int stmt_get_parameter_info(pdo_stmt_t * stmt, struct pdo_bound_param_dat
+ #ifdef PASE /* i5/OS incompatible v6r1 change */
+ 			case SQL_VARBINARY_V6:
+ 			case SQL_BINARY_V6:
+-#endif /* PASE */
++#else
++			case SQL_VARBINARY:
+ 			case SQL_BINARY:
++#endif /* PASE */
+ 			case SQL_BLOB:
+ #ifndef PASE /* i5/OS CLOB is char not binary (default) */
+ 			case SQL_CLOB:
+ #endif
+ 			case SQL_XML:
+-			case SQL_VARBINARY:
+ #ifndef PASE
+ 			case SQL_LONGVARBINARY:
+ #endif
+@@ -461,20 +463,29 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
+ 		* directly,
+ 		*/
+ 			if (param_res->ctype == SQL_C_LONG) {
++
++#if PHP_MAJOR_VERSION >= 7
++                zval *parameter;
++                if (Z_ISREF(curr->parameter)) {
++                        parameter = Z_REFVAL(curr->parameter);
++                } else {
++                        parameter = &curr->parameter;
++                }
++#endif
++
+ #ifdef PASE /* i5/OS SQLBindParameter null issues */
++#if PHP_MAJOR_VERSION >= 7
++				if (Z_TYPE_P(parameter) == IS_NULL)
++					convert_to_long(parameter);
++#else
+ 				if (Z_TYPE_P(curr->parameter) == IS_NULL)
+ 					convert_to_long(curr->parameter);
+-#endif /* PASE */
++#endif
++#endif /*PASE */
+ 
+ #if PHP_MAJOR_VERSION >= 7
+-                                zval *parameter;
+-                                if (Z_ISREF(curr->parameter)) {
+-                                        parameter = Z_REFVAL(curr->parameter);
+-                                } else {
+-                                        parameter = &curr->parameter;
+-                                }
+-                                if ( parameter == NULL || Z_TYPE_P(parameter) == IS_NULL ) {
+-#else                    
++				if ( parameter == NULL || Z_TYPE_P(parameter) == IS_NULL ) {
++#else
+ 				if (Z_TYPE_P(curr->parameter) == IS_NULL) {
+ #endif
+ 					/* null value was found */
+@@ -492,11 +503,18 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
+ 					check_stmt_error(rc, "SQLBindParameter");
+ 					return TRUE;
+ 				} else {
++
+ #ifdef PASE /* i5/OS SQLBindParameter string ptr to null byte issues */
++#if PHP_MAJOR_VERSION >= 7
++					if (Z_TYPE_P(parameter) == IS_STRING
++												&& !strcmp(parameter->value.str->val, ""))
++											convert_to_long(parameter);
++#else
+ 					if (Z_TYPE_P(curr->parameter) == IS_STRING
+-							&& !strcmp(curr->parameter->value.str.val, ""))
+-						convert_to_long(curr->parameter);
+-#endif /* PASE */
++												&& !strcmp(curr->parameter->value.str.val, ""))
++											convert_to_long(curr->parameter);
++#endif
++#endif /*PASE */
+ 
+ #if PHP_MAJOR_VERSION >= 7
+ 					convert_to_string(parameter);
+@@ -562,34 +580,59 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
+ 			*/
+ 			if (param_res->ctype == SQL_C_LONG) {
+ 				/* change this to a character type */
++#if PHP_MAJOR_VERSION >= 7
++                zval *parameter;
++                if (Z_ISREF(curr->parameter)) {
++                        parameter = Z_REFVAL(curr->parameter);
++                } else {
++                        parameter = &curr->parameter;
++                }
++#endif
+ #ifdef PASE /* i5/OS SQLBindParameter string ptr to null byte issues */
++#if PHP_MAJOR_VERSION >= 7
++				if (!strcmp(parameter->value.str->val, ""))
++					convert_to_long(parameter);
++#else
+ 				if (!strcmp(curr->parameter->value.str.val, ""))
+ 					convert_to_long(curr->parameter);
++#endif
+ #endif /* PASE */
+ 				param_res->ctype = SQL_C_CHAR;
+ 				is_num = 1;
+ 			}
++
++#if PHP_MAJOR_VERSION >= 7
++                zval *parameter;
++                if (Z_ISREF(curr->parameter)) {
++                        parameter = Z_REFVAL(curr->parameter);
++                } else {
++                        parameter = &curr->parameter;
++                }
++#endif
++
+ #ifdef PASE /* i5/OS SQLBindParameter null issues */
+-			if ((param_res->data_type == SQL_CLOB
+-				|| param_res->data_type == SQL_DBCLOB)
+-				&& Z_TYPE_P(curr->parameter) == IS_NULL)
+-				convert_to_string(curr->parameter);
+-#endif /* PASE */
+ #if PHP_MAJOR_VERSION >= 7
+-                                zval *parameter;
+-                                if (Z_ISREF(curr->parameter)) {
+-                                        parameter = Z_REFVAL(curr->parameter);
+-                                } else {
+-                                        parameter = &curr->parameter;
+-                                }
+-                                if ( parameter == NULL || Z_TYPE_P(parameter) == IS_NULL ||
+-                                    (is_num && Z_STRVAL_P(parameter) != NULL &&
+-                                     (Z_STRVAL_P(parameter) == '\0'))) { 
+-                                     
+-#else                    
+-			if (Z_TYPE_P(curr->parameter) == IS_NULL
+-					|| (is_num && Z_STRVAL_P(curr->parameter) != NULL
+-					&& (Z_STRVAL_P(curr->parameter) == '\0'))) {
++				if ((param_res->data_type == SQL_CLOB
++					|| param_res->data_type == SQL_DBCLOB)
++					&& Z_TYPE_P(parameter) == IS_NULL)
++					convert_to_string(parameter);
++#else
++				if ((param_res->data_type == SQL_CLOB
++					|| param_res->data_type == SQL_DBCLOB)
++					&& Z_TYPE_P(curr->parameter) == IS_NULL)
++					convert_to_string(curr->parameter);
++#endif
++#endif /*PASE */
++
++#if PHP_MAJOR_VERSION >= 7
++                if ( parameter == NULL || Z_TYPE_P(parameter) == IS_NULL ||
++                    (is_num && Z_STRVAL_P(parameter) != NULL &&
++                     (Z_STRVAL_P(parameter) == '\0'))) {
++
++#else
++        		if (Z_TYPE_P(curr->parameter) == IS_NULL
++        				|| (is_num && Z_STRVAL_P(curr->parameter) != NULL
++        				&& (Z_STRVAL_P(curr->parameter) == '\0'))) {
+ #endif
+ 
+ #ifdef PASE /* i5/OS DBCLOB */
+@@ -742,6 +785,17 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
+ #ifndef PASE
+ 			param_res->transfer_length = SQL_DATA_AT_EXEC;
+ #else
++#if PHP_MAJOR_VERSION >= 7
++			if (Z_TYPE_P(parameter) == IS_RESOURCE) {
++				param_res->transfer_length = SQL_DATA_AT_EXEC;
++				data_buf = (char *)curr;
++			} else {
++				param_res->transfer_length = SQL_LEN_DATA_AT_EXEC(Z_STRLEN_P(parameter));
++				/* get the pointer to the string data */
++				data_buf = Z_STRVAL_P(parameter);
++				/* to cause a conversion to ebcdic */
++			}
++#else
+ 			if (Z_TYPE_P(curr->parameter) == IS_RESOURCE) {
+ 				param_res->transfer_length = SQL_DATA_AT_EXEC;
+ 				data_buf = (char *)curr;
+@@ -752,6 +806,7 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
+ 				/* to cause a conversion to ebcdic */
+ 			}
+ #endif
++#endif
+ 
+ 			/*
+ 			* We can't bind LOBs at this point...we process all
+@@ -1010,15 +1065,18 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
+ 		* this includes any unknown types
+ 		*/
+ #ifdef PASE
+-		case SQL_VARBINARY:
+-		case SQL_BINARY:
+ 		case SQL_XML:
+ #endif
+ #ifdef PASE /* i5/OS incompatible v6r1 change */
+ 		case SQL_VARBINARY_V6:
+ 		case SQL_BINARY_V6:
++#else
++		case SQL_VARBINARY:
++		case SQL_BINARY:
+ #endif /* PASE */
++#ifndef PASE 
+ 		case SQL_LONGVARCHAR:
++#endif /* PASE */
+ 		case SQL_CHAR:
+ 		case SQL_VARCHAR:
+ 		case SQL_TYPE_TIME:
