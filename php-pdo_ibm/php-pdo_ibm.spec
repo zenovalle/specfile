@@ -63,9 +63,7 @@ fix-rpath ./modules/pdo_ibm.so "/QOpenSys/pkgs/lib:/QOpenSys/usr/lib"
 %install
 
 # make install does NOT respect destdir, we will manually install this ourselves
-# XXX: have to run mkdir -p and install without -D; i 7.2 specific?
-mkdir -p %{buildroot}%{_libdir}/php-%{php_version}/extensions/
-install -m 755 modules/pdo_ibm.so %{buildroot}%{_libdir}/php-%{php_version}/extensions/pdo_ibm.so
+install -D -m 755 modules/pdo_ibm.so %{buildroot}%{_libdir}/php-%{php_version}/extensions/pdo_ibm.so
 install -D -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/php/conf.d/99-pdo_ibm.ini
 
 # test suite is incredibly fragile
